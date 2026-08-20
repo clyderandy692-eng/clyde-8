@@ -1,6 +1,7 @@
 'use client'
 
-import { useClydeReady } from '@/lib/clyde/store'
+import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 /**
  * Déclenche la relecture du stockage local, une fois, pour toute l'application.
@@ -20,7 +21,34 @@ import { useClydeReady } from '@/lib/clyde/store'
  * Ne rend rien : ce n'est pas un fournisseur de contexte, seulement un
  * déclencheur monté au plus haut.
  */
+const STORE_ROUTES = [
+  '/admin',
+  '/connexion',
+  '/espace-client',
+  '/formation',
+  '/forum',
+  '/goodies',
+  '/inscription',
+  '/marketplace',
+  '/onboarding',
+  '/r/',
+  '/rejoindre',
+  '/tableau-de-bord',
+  '/verifier/',
+]
+
 export function StoreHydrator() {
-  useClydeReady()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    if (!STORE_ROUTES.some((route) => pathname.startsWith(route))) return
+
+    /* Import asynchrone : les pages éditoriales et l'accueil n'embarquent plus
+       le store métier ni ses jeux de démonstration dans leur chemin critique. */
+    void import('@/lib/clyde/store').then(({ useClyde }) => {
+      if (!useClyde.persist.hasHydrated()) void useClyde.persist.rehydrate()
+    })
+  }, [pathname])
+
   return null
 }

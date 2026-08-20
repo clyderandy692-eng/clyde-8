@@ -14,10 +14,10 @@ import type {
 
 export const FONT_VAR: Record<FontChoice, string> = {
   kanit: 'var(--font-kanit)',
-  inter: 'var(--font-inter)',
+  inter: 'Inter, ui-sans-serif, system-ui, sans-serif',
   playfair: 'var(--font-playfair)',
-  space: 'var(--font-space)',
-  lora: 'var(--font-lora)',
+  space: 'Avenir Next, ui-sans-serif, system-ui, sans-serif',
+  lora: 'Georgia, ui-serif, serif',
 }
 
 export const FONT_LABEL: Record<FontChoice, string> = {

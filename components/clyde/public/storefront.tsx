@@ -1,14 +1,26 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react'
 import { PageRenderer } from '@/components/clyde/page/renderer'
-import { PageSocial } from '@/components/clyde/public/page-social'
-import { OptionPicker } from '@/components/clyde/public/option-picker'
-import { Overlay } from '@/components/clyde/public/overlay'
-import { ReservationSheet } from '@/components/clyde/public/reservation-sheet'
+
+const PageSocial = dynamic(() =>
+  import('@/components/clyde/public/page-social').then((module) => module.PageSocial),
+)
+const OptionPicker = dynamic(() =>
+  import('@/components/clyde/public/option-picker').then((module) => module.OptionPicker),
+)
+const Overlay = dynamic(() =>
+  import('@/components/clyde/public/overlay').then((module) => module.Overlay),
+)
+const ReservationSheet = dynamic(() =>
+  import('@/components/clyde/public/reservation-sheet').then(
+    (module) => module.ReservationSheet,
+  ),
+)
 import { publicBlocks } from '@/lib/clyde/blocks'
 import { useT } from '@/lib/clyde/i18n'
 import { cameFromInside, markInternalNavigation } from '@/lib/clyde/navigation'
@@ -39,11 +51,18 @@ import type { CartLine, Product } from '@/lib/clyde/types'
  */
 export function Storefront({ slug, table, device }: { slug: string; table?: string; device?: 'desktop' | 'mobile' }) {
   const router = useRouter()
-  const [renderDevice, setRenderDevice] = useState<'desktop' | 'mobile'>(device ?? 'desktop')
+  const searchParams = useSearchParams()
+  const queryDevice = searchParams.get('previewDevice')
+  const resolvedDevice =
+    device ?? (queryDevice === 'mobile' || queryDevice === 'desktop' ? queryDevice : undefined)
+  const resolvedTable = table ?? searchParams.get('table') ?? undefined
+  const [renderDevice, setRenderDevice] = useState<'desktop' | 'mobile'>(
+    resolvedDevice ?? 'desktop',
+  )
 
   useEffect(() => {
-    if (device) {
-      setRenderDevice(device)
+    if (resolvedDevice) {
+      setRenderDevice(resolvedDevice)
       return
     }
     const media = window.matchMedia('(max-width: 767px)')
@@ -51,7 +70,7 @@ export function Storefront({ slug, table, device }: { slug: string; table?: stri
     update()
     media.addEventListener('change', update)
     return () => media.removeEventListener('change', update)
-  }, [device])
+  }, [resolvedDevice])
   const t = useT()
   const businesses = useClyde((s) => s.businesses)
   const pages = useClyde((s) => s.pages)
@@ -112,12 +131,13 @@ export function Storefront({ slug, table, device }: { slug: string; table?: stri
 
   /* Contexte QR : ?table=... est mémorisé pour ce commerce */
   useEffect(() => {
-    if (!business || !table) return
+    if (!business || !resolvedTable) return
     const match = locations.find(
-      (l) => l.label.toLowerCase() === table.toLowerCase() || l.id === table,
+      (l) =>
+        l.label.toLowerCase() === resolvedTable.toLowerCase() || l.id === resolvedTable,
     )
     if (match) setQrContext(business.id, match.id)
-  }, [business, table, locations, setQrContext])
+  }, [business, resolvedTable, locations, setQrContext])
 
   useEffect(() => {
     if (business) track(business.id, 'page_view')
