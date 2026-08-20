@@ -34,9 +34,10 @@ export default function LandingPage() {
       id="accueil"
       className="relative min-h-dvh bg-background font-sans text-foreground"
     >
-      {/* Le plan quadrillé reste une texture de l'Usine, mais sans halo : une
-          seule couche de fond suffit et laisse les aperçus porter la preuve. */}
-      <Backdrop pattern="blueprint" />
+      {/* Papier millimétré : la table à dessin avant le tracé. C'est la page où
+          l'on promet de construire — le fond montre le support, pas l'ouvrage.
+          Le halo est réservé aux pages d'accroche. */}
+      <Backdrop pattern="blueprint" glow />
       <ScrollReveal />
       <LandingNav />
       {/* `relative z-10` : le fond est peint au-dessus du `bg-background` du

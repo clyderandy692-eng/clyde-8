@@ -1,6 +1,6 @@
 'use client'
 
-import { Play, Star } from 'lucide-react'
+import { Play } from 'lucide-react'
 import { Reveal } from '@/components/clyde/reveal'
 import { useT } from '@/lib/clyde/i18n'
 import { cn } from '@/lib/utils'
@@ -103,16 +103,7 @@ export function LandingTestimonials() {
                 {t.testimonials.videoSoon}
               </span>
               <div className="relative">
-                <span className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star
-                      key={s}
-                      size={12}
-                      className="fill-brand text-brand"
-                    />
-                  ))}
-                </span>
-                <p className="mt-1.5 text-[13px] leading-snug font-bold text-background">
+                <p className="text-[13px] leading-snug font-bold text-background">
                   {t.testimonials.videoQuote}
                 </p>
                 <p className="text-[11px] text-background/60">

@@ -41,6 +41,9 @@ export function EngineerPapers({
   const { locale } = useLocale()
   const users = useClyde((s) => s.users)
   const certificates = useClyde((s) => s.certificates)
+  const orderCount = useClyde(
+    (s) => s.orders.filter((order) => order.business_id === business.id).length,
+  )
   const markActivationDone = useClyde((s) => s.markActivationDone)
   /* Lu ici plutôt que reçu en prop : le composant est monté à deux endroits, et
      un `published` transmis à la main finirait par diverger de l'état réel. */
@@ -290,7 +293,7 @@ export function EngineerPapers({
           <Button
             variant="outline"
             className="justify-start"
-            disabled={busy !== null}
+            disabled={busy !== null || orderCount < 100}
             onClick={() => setPreview('certificate')}
           >
             <ScrollText className="size-4" aria-hidden="true" />
@@ -299,7 +302,11 @@ export function EngineerPapers({
           </Button>
           {variant === 'panel' && (
             <p className="text-[13px] leading-relaxed text-muted-foreground">
-              {a.certificateHint}
+              {orderCount >= 100
+                ? a.certificateHint
+                : locale === 'fr'
+                  ? `${orderCount}/100 commandes — délivré à votre 100ᵉ commande.`
+                  : `${orderCount}/100 orders — awarded with your 100th order.`}
             </p>
           )}
         </div>

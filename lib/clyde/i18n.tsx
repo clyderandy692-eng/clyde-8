@@ -80,14 +80,14 @@ const FR = {
 
   hero: {
     badge: 'Votre espace commercial',
-    titleLine1: 'Votre commerce,',
-    titleLine2: 'prêt à vendre.',
-    titleAccent: 'Sans technique.',
+    titleLine1: 'Automatisez votre activité,',
+    titleLine2: 'recevez vos commandes,',
+    titleAccent: 'relancez vos clients.',
     subtitle:
-      'Une page à votre nom pour présenter, vendre et réserver. Chaque commande arrive sur WhatsApp, avec la table ou le créneau — et vos clients restent les vôtres.',
+      'Créez votre vitrine, configurez votre catalogue, activez les réservations. Vos clients commandent depuis leur téléphone ; vous recevez chaque commande sur WhatsApp avec la table ou le créneau. Contrairement aux réseaux sociaux, vous gardez l’accès complet à vos abonnés et pouvez les relancer directement depuis votre tableau de bord.',
     ctaPrimary: 'Créer ma page gratuitement',
     ctaSecondary: 'Voir une page existante',
-    proofs: ['Gratuit 35 jours', 'Sans carte bancaire', 'Sans code'],
+    proofs: ['5 semaines offertes', 'Sans carte bancaire', 'Vos clients restent les vôtres'],
     stickerWhatsapp: 'Commande reçue sur WhatsApp',
     stickerQr: 'Table 3 · scan',
     stickerGrowth: 'Commandes taguées par table',
@@ -144,7 +144,7 @@ const FR = {
     beforeAfter: [
       {
         before: '« C’est combien ? » — 40 fois par jour',
-        after: 'Prix et photos visibles. Le client commande direct.',
+        after: 'Prix visibles : 0 réponse à recopier, commande directe.',
       },
       {
         before: 'Commandes prises de tête, erreurs de table',
@@ -281,7 +281,7 @@ const FR = {
       card: 'Carte d’Ingénieur',
       cardHint: 'Votre poste, votre matricule et le QR de votre page.',
       certificate: 'Certificat de Fondation',
-      certificateHint: 'Atteste la publication de votre page. Fait pour être encadré.',
+      certificateHint: 'Atteste votre 100ᵉ commande reçue avec CLYDE. Fait pour être encadré.',
       download: 'Télécharger',
       ready: 'Document prêt.',
       locked: 'Publiez votre page pour recevoir vos papiers.',
@@ -297,7 +297,7 @@ const FR = {
       title: 'Titre',
       id: 'Matricule',
       since: 'Intégration',
-      qrHint: 'Scannez pour ouvrir la boutique',
+      qrHint: 'Scannez pour ouvrir la page',
       footer: 'Carte délivrée par l’Usine CLYDE. Elle atteste d’une page publiée, pas d’un agrément commercial.',
     },
 
@@ -307,7 +307,7 @@ const FR = {
       document: 'Certificat de Fondation',
       awarded: 'L’Usine CLYDE certifie que',
       statement:
-        'a construit et publié sa page, et rejoint à ce titre les ingénieurs de l’Usine.',
+        'a franchi le seuil de 100 commandes reçues avec CLYDE, et atteint à ce titre un jalon vérifiable de son activité.',
       post: 'Poste',
       id: 'Matricule',
       date: 'Délivré le',
@@ -376,7 +376,7 @@ const FR = {
       {
         feature: 'Annuaire de découverte',
         /* « Hall CLYDE » et non « Hall d'exposition CLYDE » : la cellule est
-           l'une de quatre colonnes, et la ligne annonce déjà « Annuaire de
+           l'une de quatre colonnes, et la ligne annonce déj�� « Annuaire de
            découverte » — le nom complet y déborderait sans rien ajouter. */
         cells: ['Non', 'Non', 'Non', 'Hall CLYDE'],
       },
@@ -454,8 +454,8 @@ const FR = {
 
   pricing: {
     kicker: 'Tarifs',
-    title: '35 jours gratuits. Tout inclus.',
-    body: 'Sans carte bancaire. Sans commission. Vous changez de plan quand vous voulez.',
+    title: '5 semaines offertes. Tout inclus.',
+    body: '35 jours pour couvrir un cycle complet d’activité, week-ends compris. Sans carte bancaire ni commission.',
     mostChosen: 'Le plus choisi',
     onRequest: 'Sur devis',
     perMonth: '/mois',
@@ -508,9 +508,9 @@ const FR = {
     titleBefore: 'Votre activité mérite',
     titleAccent: 'une présence à votre image.',
     body: 'Exprimez ce qui vous rend unique, avec les outils et la visibilité que votre activité mérite.',
-    ctaPrimary: 'Créer ma boutique gratuitement',
+    ctaPrimary: 'Créer ma page gratuitement',
     ctaSecondary: 'Visiter le Hall d’exposition',
-    footnote: 'Gratuit 35 jours · Sans carte bancaire · Sans code',
+    footnote: '5 semaines offertes · Sans carte bancaire · Sans commission',
     stickers: {
       qr: 'QR',
       whatsapp: 'WhatsApp',
@@ -1818,14 +1818,14 @@ const EN: Dict = {
 
   hero: {
     badge: 'Your commercial space',
-    titleLine1: 'Your business,',
-    titleLine2: 'ready to sell.',
-    titleAccent: 'No tech required.',
+    titleLine1: 'Automate your business,',
+    titleLine2: 'receive your orders,',
+    titleAccent: 're-engage your customers.',
     subtitle:
-      'One page to present, sell and take bookings. Every order lands on WhatsApp with the table or time slot — and your customers remain yours.',
+      'Set up your storefront, configure your catalogue and activate bookings. Customers order from their phone; you receive every order on WhatsApp with the table or time slot. Unlike social networks, you keep full access to your subscribers and can re-engage them directly from your CLYDE dashboard.',
     ctaPrimary: 'Create my page for free',
     ctaSecondary: 'See an existing page',
-    proofs: ['Free for 35 days', 'No credit card', 'No code'],
+    proofs: ['5 weeks free', 'No credit card', 'Your customers stay yours'],
     stickerWhatsapp: 'Order on WhatsApp',
     stickerQr: 'Table 3 · scan',
     stickerGrowth: '+34% orders',
@@ -1880,7 +1880,7 @@ const EN: Dict = {
     beforeAfter: [
       {
         before: '“How much is it?” — 40 times a day',
-        after: 'Prices and photos visible. Customers order directly.',
+        after: 'Prices visible: 0 replies to retype, direct ordering.',
       },
       {
         before: 'Orders taken by voice, wrong tables',
@@ -1991,7 +1991,7 @@ const EN: Dict = {
       card: 'Engineer Card',
       cardHint: 'Your position, your ID number and the QR code of your page.',
       certificate: 'Certificate of Foundation',
-      certificateHint: 'Certifies that your page is live. Made to be framed.',
+      certificateHint: 'Certifies your 100th order received with CLYDE. Made to be framed.',
       download: 'Download',
       ready: 'Document ready.',
       locked: 'Publish your page to receive your papers.',
@@ -2015,7 +2015,7 @@ const EN: Dict = {
       document: 'Certificate of Foundation',
       awarded: 'The CLYDE Factory certifies that',
       statement:
-        'has built and published its page, and thereby joins the engineers of the Factory.',
+        'has reached 100 orders received with CLYDE, a verifiable milestone in the life of the business.',
       post: 'Position',
       id: 'ID number',
       date: 'Issued on',
@@ -2153,8 +2153,8 @@ const EN: Dict = {
 
   pricing: {
     kicker: 'Pricing',
-    title: '35 days free. Everything included.',
-    body: 'No credit card. No commission. Change plan whenever you want.',
+    title: '5 weeks free. Everything included.',
+    body: '35 days cover a full business cycle, weekends included. No credit card and no commission.',
     mostChosen: 'Most chosen',
     onRequest: 'On request',
     perMonth: '/month',
@@ -2207,9 +2207,9 @@ const EN: Dict = {
     titleBefore: 'Your business deserves',
     titleAccent: 'a presence that feels like you.',
     body: 'Express what makes you unique, with the tools and visibility your business deserves.',
-    ctaPrimary: 'Create my shop for free',
+    ctaPrimary: 'Create my page for free',
     ctaSecondary: 'Visit the Showroom',
-    footnote: 'Free for 35 days · No credit card · No code',
+    footnote: '5 weeks free · No credit card · No commission',
     stickers: {
       qr: 'QR',
       whatsapp: 'WhatsApp',

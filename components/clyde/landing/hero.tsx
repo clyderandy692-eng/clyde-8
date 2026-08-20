@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, BadgeCheck, QrCode } from 'lucide-react'
+import { ArrowRight, BarChart3, MessageCircle, QrCode } from 'lucide-react'
 import { Reveal } from '@/components/clyde/reveal'
 import { PageRenderer } from '@/components/clyde/page/renderer'
 import { useT } from '@/lib/clyde/i18n'
@@ -15,34 +15,57 @@ import {
   DEMO_PRODUCTS,
 } from '@/lib/clyde/demo-data'
 
-function EngineerCard() {
+/* Blob liquide orange : seul le fond bouge, le mockup reste net (§22) */
+function LiquidBlob() {
   return (
-    <div className="absolute -bottom-7 -left-24 z-20 hidden w-64 -rotate-6 overflow-hidden rounded-2xl border border-foreground/15 bg-card shadow-xl xl:block">
-      <div className="h-2 bg-brand" />
-      <div className="flex flex-col gap-4 p-5">
-        <div className="flex items-center justify-between gap-3">
-          <span className="font-mono text-[10px] font-bold tracking-[0.24em] text-brand uppercase">
-            Usine CLYDE
-          </span>
-          <BadgeCheck className="size-5 text-brand" aria-hidden="true" />
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-brand font-mono text-sm font-bold text-brand-foreground">
-            AM
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold">Aïcha Martin</p>
-            <p className="text-[11px] text-muted-foreground">Ingénieure de proximité</p>
-          </div>
-        </div>
-        <div className="flex items-end justify-between gap-3 border-t border-border pt-3">
-          <div>
-            <p className="font-mono text-[9px] text-muted-foreground uppercase">Matricule</p>
-            <p className="font-mono text-[10px] font-bold">CLYDE-ENG-000342</p>
-          </div>
-          <QrCode className="size-8 text-foreground" aria-hidden="true" />
-        </div>
-      </div>
+    <div
+      aria-hidden="true"
+      className="clyde-blob-stage pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden"
+    >
+      <svg
+        viewBox="0 0 800 700"
+        className="h-[135%] w-[135%] max-w-none"
+        style={{ filter: 'blur(40px)' }}
+      >
+        <defs>
+          <radialGradient id="clyde-blob-grad" cx="45%" cy="40%" r="72%">
+            <stop offset="0%" stopColor="#FF6B35" stopOpacity="0.95" />
+            <stop offset="52%" stopColor="#FFB199" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#FFB199" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <path
+          className="clyde-blob"
+          fill="url(#clyde-blob-grad)"
+          d="M420 90C520 60 640 120 690 230C740 340 700 480 600 560C500 640 340 660 240 590C140 520 80 380 110 260C140 140 320 120 420 90Z"
+        />
+      </svg>
+    </div>
+  )
+}
+
+function Sticker({
+  icon: Icon,
+  label,
+  className,
+  style,
+}: {
+  icon: typeof QrCode
+  label: string
+  className?: string
+  style?: React.CSSProperties
+}) {
+  return (
+    <div
+      className={`clyde-glass clyde-float absolute hidden items-center gap-2 rounded-2xl px-3 py-2.5 lg:flex ${className ?? ''}`}
+      style={style}
+    >
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand/12 text-brand">
+        <Icon size={15} />
+      </span>
+      <span className="text-[12px] leading-tight font-semibold whitespace-nowrap">
+        {label}
+      </span>
     </div>
   )
 }
@@ -58,8 +81,8 @@ export function LandingHero() {
   )
 
   return (
-    <section className="relative overflow-hidden px-5 pt-24 pb-14 sm:pt-28 lg:pb-20">
-      <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10">
+    <section className="relative overflow-hidden px-5 pt-28 pb-16 sm:pt-32 lg:pb-24">
+      <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
         {/* ---- Colonne texte ---- */}
         <div className="flex flex-col items-start gap-6">
           {/* Le premier écran utilise `priority` : ces trois blocs sont ce que
@@ -79,7 +102,7 @@ export function LandingHero() {
             {/* Les lignes vides sont ignorées : le titre garde des retours à
                 la ligne maîtrisés (une idée par ligne) sans jamais afficher
                 de ligne fantôme qui casserait le rythme sur mobile. */}
-            <h1 className="max-w-xl text-balance text-[2.5rem] leading-[1.04] font-bold tracking-[-0.03em] sm:text-5xl sm:leading-none lg:text-[3.55rem]">
+            <h1 className="text-[2.5rem] leading-[1.04] font-bold tracking-[-0.03em] sm:text-6xl sm:leading-[0.98] lg:text-[4.1rem]">
               {t.hero.titleLine1}
               {t.hero.titleLine2 && (
                 <>
@@ -141,7 +164,7 @@ export function LandingHero() {
         {/* ---- Colonne mockup ---- */}
         <Reveal variant="scale" delay={140}>
           <div className="relative mx-auto flex w-full max-w-[420px] items-center justify-center lg:max-w-none">
-            <div className="absolute inset-y-8 left-1/2 w-72 -translate-x-1/2 rounded-[3rem] border border-brand/25 bg-brand/8" aria-hidden="true" />
+            <LiquidBlob />
 
             <div className="relative z-10 w-[286px]">
               <div className="relative rounded-[2.6rem] border-[7px] border-foreground bg-foreground shadow-2xl">
@@ -191,9 +214,39 @@ export function LandingHero() {
                 </div>
               </div>
 
-              {/* La carte d'ingénieur devient l'objet signature de CLYDE : un seul
-                  artefact mémorable plutôt que trois notifications flottantes. */}
-              <EngineerCard />
+              {/* Stickers ancrés hors du cadre, jamais par-dessus l'écran */}
+              <Sticker
+                icon={MessageCircle}
+                label={t.hero.stickerWhatsapp}
+                className="top-10 right-full mr-4 translate-y-8"
+                style={
+                  { '--dur': '7s', '--amp': '12px' } as React.CSSProperties
+                }
+              />
+              <Sticker
+                icon={QrCode}
+                label={t.hero.stickerQr}
+                className="top-1/2 left-full ml-4"
+                style={
+                  {
+                    '--dur': '8.5s',
+                    '--amp': '14px',
+                    '--delay': '0.6s',
+                  } as React.CSSProperties
+                }
+              />
+              <Sticker
+                icon={BarChart3}
+                label={t.hero.stickerGrowth}
+                className="bottom-16 right-full mr-6"
+                style={
+                  {
+                    '--dur': '9s',
+                    '--amp': '10px',
+                    '--delay': '1.2s',
+                  } as React.CSSProperties
+                }
+              />
             </div>
           </div>
         </Reveal>

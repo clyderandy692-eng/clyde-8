@@ -9,6 +9,7 @@ import {
   Space_Grotesk,
   Lora,
 } from 'next/font/google'
+import { LofiPlayer } from '@/components/clyde/landing/lofi-player'
 import { StoreHydrator } from '@/components/clyde/store-hydrator'
 import { Toaster } from '@/components/ui/sonner'
 import { LocaleProvider } from '@/lib/clyde/i18n'
@@ -122,6 +123,7 @@ export default function RootLayout({
             des données par l'état de démonstration. */}
         <StoreHydrator />
         <LocaleProvider>{children}</LocaleProvider>
+        <LofiPlayer />
         <Toaster position="top-center" />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
