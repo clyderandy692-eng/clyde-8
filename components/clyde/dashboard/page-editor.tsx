@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useEffectEvent, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import {
   ChevronDown,
   ChevronUp,
@@ -26,6 +27,7 @@ import {
   GalleryHorizontal,
   BadgePercent,
   Circle,
+  CopyIcon,
 } from 'lucide-react'
 import {
   DndContext,
@@ -59,6 +61,7 @@ import { BLOCK_LIBRARY, BLOCK_META, createBlock } from '@/lib/clyde/blocks'
 import { useEditorDock } from '@/lib/clyde/editor-dock'
 import { useEditorSession } from '@/lib/clyde/editor-session'
 import {
+  duplicateEditorBlock,
   moveEditorBlock,
   removeEditorBlock,
   reorderEditorBlock,
@@ -98,6 +101,18 @@ import type {
   IdentityMediaBlock,
 } from '@/lib/clyde/types'
 
+const BLOCK_STYLE_PRESETS: Array<{
+  id: string
+  label: { fr: string; en: string }
+  hint: { fr: string; en: string }
+  style: BlockStyle
+}> = [
+  { id: 'restaurant', label: { fr: 'Restaurant', en: 'Restaurant' }, hint: { fr: 'Généreux et lisible', en: 'Generous and readable' }, style: { align: 'left', fontScale: 1.1, fontWeight: 700, paddingY: 40, paddingX: 24, radius: 'round' } },
+  { id: 'boutique', label: { fr: 'Boutique', en: 'Shop' }, hint: { fr: 'Net et élégant', en: 'Clean and elegant' }, style: { align: 'center', fontScale: 1, fontWeight: 600, paddingY: 32, paddingX: 20, radius: 'soft' } },
+  { id: 'service', label: { fr: 'Service', en: 'Service' }, hint: { fr: 'Direct et rassurant', en: 'Direct and reassuring' }, style: { align: 'left', fontScale: 0.95, fontWeight: 500, paddingY: 28, paddingX: 20, radius: 'soft' } },
+  { id: 'createur', label: { fr: 'Créateur', en: 'Creator' }, hint: { fr: 'Fort et éditorial', en: 'Bold and editorial' }, style: { align: 'center', fontScale: 1.2, fontWeight: 700, paddingY: 48, paddingX: 24, radius: 'sharp' } },
+]
+
 const ICONS = {
   Image,
   Search,
@@ -132,7 +147,13 @@ const LABELS = {
     hidden: 'Masqué',
     moveUp: 'Monter',
     moveDown: 'Descendre',
+    duplicate: 'Dupliquer',
+    duplicateUnavailable: 'Ce bloc ne peut apparaître qu’une fois',
     delete: 'Supprimer',
+    deleted: 'Bloc supprimé',
+    restore: 'Rétablir',
+    movedTo: 'déplacé en position',
+    of: 'sur',
     noSelection: 'Style de la page',
     pageStyle: 'Style de la page',
     pageStyleHint: 'Fond, couleurs et identité de toute la page',
@@ -149,6 +170,8 @@ const LABELS = {
     pageInk: 'Texte',
     pageBrand: 'Boutons & accents',
     resetColors: 'Revenir aux couleurs de la page',
+    resetStyle: 'Réinitialiser toute l’apparence',
+    resetStyleHint: 'Retrouver les réglages par défaut de ce bloc',
     customColorsOn: 'Ce bloc a ses propres couleurs.',
     contentSection: 'Contenu',
     style: 'Apparence',
@@ -242,7 +265,13 @@ const LABELS = {
     hidden: 'Hidden',
     moveUp: 'Move up',
     moveDown: 'Move down',
+    duplicate: 'Duplicate',
+    duplicateUnavailable: 'This block can only appear once',
     delete: 'Delete',
+    deleted: 'Block deleted',
+    restore: 'Restore',
+    movedTo: 'moved to position',
+    of: 'of',
     noSelection: 'Page style',
     pageStyle: 'Page style',
     pageStyleHint: 'Background, colors, and identity of the whole page',
@@ -259,6 +288,8 @@ const LABELS = {
     pageInk: 'Text',
     pageBrand: 'Buttons & accents',
     resetColors: 'Back to page colors',
+    resetStyle: 'Reset all appearance',
+    resetStyleHint: 'Restore this block’s default settings',
     customColorsOn: 'This block has its own colors.',
     contentSection: 'Content',
     style: 'Appearance',
@@ -352,13 +383,15 @@ export function PageEditor() {
   const availability = useClyde((s) => s.availability)
   const [selectedId, setSelectedId] = useState<string | null>(page?.layout_json[0]?.id ?? null)
   const [addOpen, setAddOpen] = useState(false)
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
+  const [previewWidth, setPreviewWidth] = useState<390 | 856 | 1198>(856)
+  const previewDevice = previewWidth === 390 ? 'mobile' : 'desktop'
   /* Sur téléphone, structure et réglages vivent dans des tiroirs bas : la
      page ne montre que l'aperçu — trois cartes empilées noyaient l'écran. */
   const [mobilePanel, setMobilePanel] = useState<'structure' | 'settings' | null>(null)
   /* Dans le tiroir Structure (mobile), les réglages du bloc s'ouvrent en
      accordéon SOUS le bloc touché : pas d'aller-retour entre deux tiroirs. */
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [movementAnnouncement, setMovementAnnouncement] = useState('')
   const session = useEditorSession((state) => business ? state.sessions[business.id] : undefined)
   const ensureSession = useEditorSession((state) => state.ensure)
   const commitSession = useEditorSession((state) => state.commit)
@@ -406,8 +439,8 @@ export function PageEditor() {
   }, [business, ensureSession])
 
   useEffect(() => {
-    const media = window.matchMedia('(max-width: 1023px)')
-    setPreviewDevice(media.matches ? 'mobile' : 'desktop')
+    const width = window.innerWidth
+    setPreviewWidth(width < 1024 ? 390 : width >= 1536 ? 1198 : 856)
   }, [])
 
   /* Raccourcis d'annulation. Ignorés pendant une saisie : dans un champ de
@@ -493,9 +526,20 @@ export function PageEditor() {
     commit(updateEditorBlock(blocks, id, { hidden: !block.hidden }))
   }
 
+  function announceMovement(next: Block[], id: string) {
+    const index = next.findIndex((block) => block.id === id)
+    const block = next[index]
+    if (!block || index < 0) return
+    const label = BLOCK_META[block.type]?.label ?? block.type
+    setMovementAnnouncement(`${label} ${copy.movedTo} ${index + 1} ${copy.of} ${next.length}.`)
+  }
+
   function move(id: string, direction: -1 | 1) {
     const next = moveEditorBlock(blocks, id, direction)
-    if (next !== blocks) commit(next)
+    if (next !== blocks) {
+      commit(next)
+      announceMovement(next, id)
+    }
   }
 
   /* Réordonnancement par glisser-déposer — complète les flèches, qui restent
@@ -503,8 +547,12 @@ export function PageEditor() {
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (!over || active.id === over.id) return
-    const next = reorderEditorBlock(blocks, String(active.id), String(over.id))
-    if (next !== blocks) commit(next)
+    const id = String(active.id)
+    const next = reorderEditorBlock(blocks, id, String(over.id))
+    if (next !== blocks) {
+      commit(next)
+      announceMovement(next, id)
+    }
   }
 
   function add(type: Block['type']) {
@@ -514,11 +562,34 @@ export function PageEditor() {
     setAddOpen(false)
   }
 
-  function removeSelected() {
-    if (!selected) return
-    const next = removeEditorBlock(blocks, selected.id)
+  function duplicateBlock(id: string) {
+    const block = blocks.find((item) => item.id === id)
+    const meta = block && BLOCK_LIBRARY.find((item) => item.type === block.type)
+    if (!block || meta?.unique) return
+
+    const next = duplicateEditorBlock(blocks, id)
     commit(next)
-    setSelectedId(next[0]?.id ?? null)
+    const duplicateIndex = next.findIndex((item, index) => item.id !== id && index > blocks.findIndex((item) => item.id === id))
+    setSelectedId(next[duplicateIndex]?.id ?? id)
+  }
+
+  function removeBlock(id: string) {
+    const removed = blocks.find((block) => block.id === id)
+    if (!removed) return
+
+    const next = removeEditorBlock(blocks, id)
+    commit(next)
+    if (selectedId === id) setSelectedId(next[0]?.id ?? null)
+    setExpandedId(null)
+
+    toast(copy.deleted, {
+      description: BLOCK_META[removed.type]?.label ?? removed.type,
+      action: { label: copy.restore, onClick: undo },
+    })
+  }
+
+  function removeSelected() {
+    if (selected) removeBlock(selected.id)
   }
 
   /* Garde-fou de qualité : ce qui manque pour qu'une vitrine soit vendeuse.
@@ -557,6 +628,9 @@ export function PageEditor() {
      conteneurs différents. */
   const structurePanel = (
     <>
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {movementAnnouncement}
+      </p>
       {/* Accès permanent au style GLOBAL de la page (fond, ambiance,
           couleurs) : il était introuvable — caché derrière « aucun bloc
           sélectionné ». En tête de liste, il précède les blocs comme la page
@@ -670,20 +744,28 @@ export function PageEditor() {
                         commit(updateEditorBlock(blocks, block.id, patch), `${block.id}:${field}`)
                       }}
                             />
-                            <Button
+                            <div className="mt-3 flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                disabled={Boolean(meta?.unique)}
+                                title={meta?.unique ? copy.duplicateUnavailable : undefined}
+                                onClick={() => duplicateBlock(block.id)}
+                              >
+                                <CopyIcon data-icon="inline-start" />
+                                {copy.duplicate}
+                              </Button>
+                              <Button
                               variant="ghost"
                               size="sm"
-                              className="mt-3 w-full justify-center text-destructive hover:text-destructive"
-                              onClick={() => {
-                                setExpandedId(null)
-                                const next = blocks.filter((b) => b.id !== block.id)
-                                commit(next)
-                                if (selectedId === block.id) setSelectedId(next[0]?.id ?? null)
-                              }}
+                              className="flex-1 justify-center text-destructive hover:text-destructive"
+                              onClick={() => removeBlock(block.id)}
                             >
                               <Trash2 data-icon="inline-start" />
-                              {copy.delete}
-                            </Button>
+                                {copy.delete}
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </>
@@ -824,24 +906,19 @@ export function PageEditor() {
           <CardHeader className="flex flex-row items-center justify-between gap-3 border-b py-4">
             <CardTitle className="flex items-center gap-2 text-base"><Eye className="size-4" />{copy.preview}</CardTitle>
             <div className="flex items-center rounded-lg bg-muted p-1" role="group" aria-label={copy.preview}>
-              <button
-                type="button"
-                onClick={() => setPreviewDevice('desktop')}
-                aria-label={copy.previewDesktop}
-                aria-pressed={previewDevice === 'desktop'}
-                className={`flex size-8 items-center justify-center rounded-md transition-colors ${previewDevice === 'desktop' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}
-              >
-                <Monitor className="size-4" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewDevice('mobile')}
-                aria-label={copy.previewMobile}
-                aria-pressed={previewDevice === 'mobile'}
-                className={`flex size-8 items-center justify-center rounded-md transition-colors ${previewDevice === 'mobile' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}
-              >
-                <Smartphone className="size-4" aria-hidden="true" />
-              </button>
+              {([390, 856, 1198] as const).map((width) => (
+                <button
+                  key={width}
+                  type="button"
+                  onClick={() => setPreviewWidth(width)}
+                  aria-label={`${width === 390 ? copy.previewMobile : copy.previewDesktop} — ${width} px`}
+                  aria-pressed={previewWidth === width}
+                  className={`flex h-8 items-center gap-1 rounded-md px-2 font-mono text-xs transition-colors ${previewWidth === width ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                >
+                  {width === 390 ? <Smartphone className="size-3.5" aria-hidden="true" /> : <Monitor className="size-3.5" aria-hidden="true" />}
+                  <span>{width}</span>
+                </button>
+              ))}
             </div>
           </CardHeader>
           {/* Mêmes proportions que l'aperçu de la page d'accueil : `PageRenderer`
@@ -863,9 +940,10 @@ export function PageEditor() {
               l'aperçu occupe toute la hauteur disponible de la grille (elle-même
               calée sur la hauteur de l'écran) au lieu d'un plafond arbitraire de
               540 px — les réglages de bloc, plus hauts, le dépassaient de loin. */}
-          <CardContent className="flex min-h-0 flex-1 justify-center overflow-auto bg-muted/30 p-1.5 md:p-6">
+          <CardContent className="flex min-h-0 flex-1 justify-start overflow-auto bg-muted/30 p-1.5 md:p-6">
             <div
-              className={`clyde-mock overflow-hidden rounded-xl border shadow-sm transition-all duration-300 ${previewDevice === 'mobile' ? 'w-full max-w-[390px]' : 'w-full'}`}
+              className="clyde-mock mx-auto shrink-0 overflow-hidden rounded-xl border shadow-sm transition-[width] duration-300"
+              style={{ width: previewWidth, maxWidth: previewWidth === 390 ? '100%' : undefined }}
             >
               {/* Téléphone : la hauteur du simulateur se cale sur l'espace
                   réellement libre entre l'en-tête de l'éditeur et le dock
@@ -876,7 +954,7 @@ export function PageEditor() {
                   Sur grand écran, le simulateur occupe toute la carte. */}
               <div className="clyde-no-scrollbar h-[calc(100dvh-27rem)] min-h-[20rem] overflow-y-auto lg:h-full lg:min-h-[540px]">
                 <PageRenderer
-                  key={previewDevice}
+                  key={previewWidth}
                   business={business}
                   products={products}
                   availability={availability}
@@ -946,7 +1024,21 @@ export function PageEditor() {
                 {selected ? (BLOCK_META[selected.type]?.label ?? selected.type) : copy.pageStyleHint}
               </CardDescription>
             </div>
-            {selected && <Button size="icon" variant="ghost" onClick={removeSelected} aria-label={copy.delete}><Trash2 /></Button>}
+            {selected && (
+            <div className="flex items-center gap-1">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => duplicateBlock(selected.id)}
+                disabled={Boolean(BLOCK_LIBRARY.find((item) => item.type === selected.type)?.unique)}
+                aria-label={copy.duplicate}
+                title={BLOCK_LIBRARY.find((item) => item.type === selected.type)?.unique ? copy.duplicateUnavailable : copy.duplicate}
+              >
+                <CopyIcon />
+              </Button>
+              <Button size="icon" variant="ghost" onClick={removeSelected} aria-label={copy.delete}><Trash2 /></Button>
+            </div>
+          )}
           </CardHeader>
           <CardContent className="min-h-0 overflow-y-auto p-4">
             {/* Aucun bloc sélectionné : plutôt qu'un panneau vide, on expose
@@ -1718,7 +1810,40 @@ function StyleSettings({ block, copy, onChange }: { block: Block; copy: Copy; on
   return (
     <section className="flex flex-col gap-4">
       <Separator />
-      <h3 className="font-medium">{copy.style}</h3>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-medium">{copy.style}</h3>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={Object.keys(style).length === 0}
+          title={copy.resetStyleHint}
+          onClick={() => onChange({ style: {} })}
+        >
+          {copy.resetStyle}
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          {copy.delete === 'Supprimer' ? 'Styles par métier' : 'Business presets'}
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {BLOCK_STYLE_PRESETS.map((preset) => {
+            const language = copy.delete === 'Supprimer' ? 'fr' : 'en'
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                className="flex min-h-14 flex-col justify-center rounded-xl border px-3 py-2 text-left transition-colors hover:border-primary/50 hover:bg-muted"
+                onClick={() => onChange({ style: { ...preset.style } })}
+              >
+                <span className="text-sm font-medium">{preset.label[language]}</span>
+                <span className="text-xs text-muted-foreground">{preset.hint[language]}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       <div className="flex flex-col gap-3 rounded-xl border p-3">
         <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{copy.typography}</p>

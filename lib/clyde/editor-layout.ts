@@ -43,6 +43,22 @@ export function removeEditorBlock(blocks: Block[], id: string): Block[] {
   return blocks.filter((block) => block.id !== id)
 }
 
+export function duplicateEditorBlock(
+  blocks: Block[],
+  id: string,
+  createId: () => string = () => crypto.randomUUID(),
+): Block[] {
+  const index = blocks.findIndex((block) => block.id === id)
+  if (index < 0) return blocks
+
+  const duplicate = structuredClone(blocks[index])
+  duplicate.id = createId()
+
+  const next = [...blocks]
+  next.splice(index + 1, 0, duplicate)
+  return next
+}
+
 export function canAddEditorBlock(
   blocks: Block[],
   type: BlockType,

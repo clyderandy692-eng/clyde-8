@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   canAddEditorBlock,
   commitEditorHistory,
+  duplicateEditorBlock,
   moveEditorBlock,
   redoEditorHistory,
   removeEditorBlock,
@@ -47,6 +48,24 @@ describe('structure du constructeur de pages', () => {
     const next = removeEditorBlock(initial, initial[1].id)
 
     expect(next.map((block) => block.type)).toEqual(['hero', 'contact'])
+  })
+
+  it('duplique un bloc juste après l’original avec un nouvel identifiant', () => {
+    const initial = blocks()
+    const next = duplicateEditorBlock(initial, initial[1].id, () => 'copie-catalogue')
+
+    expect(next.map((block) => block.type)).toEqual(['hero', 'catalogue', 'catalogue', 'contact'])
+    expect(next[2].id).toBe('copie-catalogue')
+    expect(next[2]).toEqual({ ...initial[1], id: 'copie-catalogue' })
+  })
+
+  it('ne mute ni l’original ni ses données imbriquées lors d’une duplication', () => {
+    const initial = blocks()
+    const next = duplicateEditorBlock(initial, initial[0].id, () => 'copie-hero')
+
+    next[1].style = { ...next[1].style, align: 'right' }
+    expect(initial[0].style?.align).not.toBe('right')
+    expect(next[0].id).toBe(initial[0].id)
   })
 
   it('met à jour un bloc sans muter son état précédent', () => {
