@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Check, Share2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { blockVars, shade } from '@/lib/clyde/theme'
@@ -122,12 +123,13 @@ export function HeroRender({ block, ctx }: { block: HeroBlock; ctx: RenderCtx })
         }}
       >
         {img ? (
-          <img
+          <Image
             src={img}
             alt={block.title}
-            className="absolute inset-0 h-full w-full object-cover"
-            fetchPriority={ctx.interactive ? 'high' : 'auto'}
-            decoding="async"
+            fill
+            priority={ctx.interactive}
+            sizes="(max-width: 767px) 100vw, 760px"
+            className="object-cover"
           />
         ) : (
           /* Sans photo : surface dérivée de la couleur de marque, jamais une image cassée */
@@ -232,12 +234,13 @@ export function HeroRender({ block, ctx }: { block: HeroBlock; ctx: RenderCtx })
             }}
           >
             {logoUrl ? (
-              <img
+              <Image
                 src={logoUrl}
                 alt={`Photo de profil ${ctx.business.name}`}
+                width={size}
+                height={size}
+                sizes={`${size}px`}
                 className="h-full w-full rounded-full object-cover"
-                loading="lazy"
-                decoding="async"
               />
             ) : (
               <span

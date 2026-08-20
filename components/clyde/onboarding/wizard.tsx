@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -52,6 +52,27 @@ const STEPS = [
   'Apparence',
 ] as const
 
+const DRAFT_KEY = 'clyde-onboarding-draft-v1'
+
+type OnboardingDraft = {
+  step: number
+  family: FamilyId | null
+  category: BusinessCategory | null
+  name: string
+  slug: string
+  slugTouched: boolean
+  city: string
+  neighborhood: string
+  description: string
+  whatsapp: string
+  currency: Currency
+  moduleLocations: boolean
+  moduleBooking: boolean
+  paletteId: string
+  font: FontChoice
+  surface: SurfaceStyle
+}
+
 export function OnboardingWizard() {
   const router = useRouter()
   const createBusiness = useClyde((s) => s.createBusiness)
@@ -79,6 +100,80 @@ export function OnboardingWizard() {
   const [paletteId, setPaletteId] = useState('clyde')
   const [font, setFont] = useState<FontChoice>('kanit')
   const [surface, setSurface] = useState<SurfaceStyle>('plain')
+  const [draftReady, setDraftReady] = useState(false)
+
+  /* Le parcours comporte plusieurs décisions : une fermeture d'onglet ne doit
+     pas les effacer. Le brouillon reste local et temporaire jusqu'à la future
+     base distante, puis disparaît dès que la page est créée. */
+  useEffect(() => {
+    try {
+      const raw = window.sessionStorage.getItem(DRAFT_KEY)
+      if (raw) {
+        const draft = JSON.parse(raw) as Partial<OnboardingDraft>
+        setStep(Math.min(Math.max(Number(draft.step) || 0, 0), STEPS.length - 1))
+        setFamily(draft.family ?? null)
+        setCategory(draft.category ?? null)
+        setName(draft.name ?? '')
+        setSlug(draft.slug ?? '')
+        setSlugTouched(Boolean(draft.slugTouched))
+        setCity(draft.city ?? '')
+        setNeighborhood(draft.neighborhood ?? '')
+        setDescription(draft.description ?? '')
+        setWhatsapp(draft.whatsapp ?? '')
+        setCurrency(draft.currency ?? 'XAF')
+        setModuleLocations(Boolean(draft.moduleLocations))
+        setModuleBooking(Boolean(draft.moduleBooking))
+        setPaletteId(draft.paletteId ?? 'clyde')
+        setFont(draft.font ?? 'kanit')
+        setSurface(draft.surface ?? 'plain')
+      }
+    } catch {
+      window.sessionStorage.removeItem(DRAFT_KEY)
+    } finally {
+      setDraftReady(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!draftReady) return
+    const draft: OnboardingDraft = {
+      step,
+      family,
+      category,
+      name,
+      slug,
+      slugTouched,
+      city,
+      neighborhood,
+      description,
+      whatsapp,
+      currency,
+      moduleLocations,
+      moduleBooking,
+      paletteId,
+      font,
+      surface,
+    }
+    window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+  }, [
+    category,
+    city,
+    currency,
+    description,
+    draftReady,
+    family,
+    font,
+    moduleBooking,
+    moduleLocations,
+    name,
+    neighborhood,
+    paletteId,
+    slug,
+    slugTouched,
+    step,
+    surface,
+    whatsapp,
+  ])
 
   const meta = category ? CATEGORY_MAP[category] : null
   const palettes = useMemo(
@@ -226,6 +321,7 @@ export function OnboardingWizard() {
     }
     updateTheme(id, theme)
     setActiveBusiness(id)
+    window.sessionStorage.removeItem(DRAFT_KEY)
     toast.success('Votre page est prête.')
     /* Le tableau de bord reprend immédiatement la main sur les quatre vraies
        actions d'activation au lieu de laisser le nouveau commerçant seul. */
