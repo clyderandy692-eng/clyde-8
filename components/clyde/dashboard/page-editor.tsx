@@ -722,7 +722,7 @@ export function PageEditor() {
      retrait). `pb-40` réservait 160 px pour deux barres empilées — la seconde
      ayant disparu, cette marge laissait un vide sous le contenu. */
   return (
-    <main className="flex min-h-dvh flex-col gap-6 p-4 pb-28 md:p-8 lg:pb-8">
+    <main className="flex min-h-dvh min-w-0 flex-col gap-6 pb-28 lg:pb-0">
       {/* Sur téléphone le titre et le bouton partagent la même ligne, et la
           phrase d'explication passe dessous. Empilés, ils poussaient l'aperçu à
           253 px du haut d'un écran de 844 : l'essentiel de l'outil — voir sa
@@ -799,7 +799,7 @@ export function PageEditor() {
           La grille se dimensionne au contenu, et c'est l'aperçu (ligne
           suivante) qui borne sa propre hauteur pour rester au-dessus du dock.
           Sur grand écran, le dock n'existe pas : la hauteur pleine revient. */}
-      <div className="grid min-w-0 gap-5 lg:h-[calc(100dvh-150px)] lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)_320px]">
+      <div className="grid min-w-0 gap-5 lg:h-[calc(100dvh-150px)] lg:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)_320px]">
         {/* Structure : carte visible sur grand écran seulement — sur téléphone
             elle vit dans le tiroir bas. */}
         <Card className="hidden min-h-0 min-w-0 flex-col overflow-hidden lg:flex">
@@ -898,9 +898,10 @@ export function PageEditor() {
                     <div
                       onClick={() => {
                         setSelectedId(block.id)
-                        /* Sous 1280px les réglages vivent dans un tiroir :
-                           sélectionner sans l'ouvrir ne montrerait rien. */
-                        if (window.innerWidth < 1280) setMobilePanel('settings')
+                        /* Tant que la troisième colonne n'est pas affichée, les réglages
+                           vivent dans un tiroir : sélectionner sans l'ouvrir ne
+                           montrerait rien. */
+                        if (window.innerWidth < 1536) setMobilePanel('settings')
                       }}
                       className={`group/blk relative cursor-pointer ${
                         selectedId === block.id
@@ -932,7 +933,7 @@ export function PageEditor() {
             l'aperçu, dans une colonne de 260px — à plus de 1000px de haut. En
             dessous de `2xl:`, on garde le tiroir bas, qui présente les mêmes
             réglages sur toute la largeur. */}
-        <Card className="hidden min-h-0 min-w-0 overflow-hidden xl:block">
+        <Card className="hidden min-h-0 min-w-0 overflow-hidden 2xl:block">
           <CardHeader className="flex flex-row items-start justify-between gap-3 border-b">
             <div>
               {/* Sans bloc sélectionné, le panneau montre le style GLOBAL :
@@ -970,7 +971,7 @@ export function PageEditor() {
       {/* `right-24` et non `right-6` : le lecteur de musique flottant occupe
           déjà le coin bas-droit (`sm:right-6`, z-60) — les deux se
           chevauchaient. Le bouton se décale à sa gauche. */}
-      <div className="fixed right-24 bottom-6 z-40 hidden items-center rounded-2xl border border-border bg-background/95 p-1.5 shadow-[0_16px_40px_-18px_rgba(0,0,0,0.5)] backdrop-blur-xl lg:flex xl:hidden">
+      <div className="fixed right-24 bottom-6 z-40 hidden items-center rounded-2xl border border-border bg-background/95 p-1.5 shadow-[0_16px_40px_-18px_rgba(0,0,0,0.5)] backdrop-blur-xl lg:flex 2xl:hidden">
         <button
           type="button"
           onClick={() => setMobilePanel('settings')}
@@ -986,7 +987,7 @@ export function PageEditor() {
         {/* Même seuil que la barre qui l'ouvre : en `lg:hidden`, le tiroir était
             masqué alors que son bouton restait cliquable — un tap n'ouvrait rien
             entre 1024 et 1600px. */}
-        <SheetContent side="bottom" className="max-h-[78dvh] gap-0 rounded-t-2xl p-0 xl:hidden">
+        <SheetContent side="bottom" className="max-h-[78dvh] gap-0 rounded-t-2xl p-0 2xl:hidden">
           {/* pr-12 : la croix de fermeture du Sheet occupe le coin droit. */}
           <SheetHeader className="flex-row items-center justify-between border-b py-3 pr-12 pl-4">
             <SheetTitle className="text-base">{copy.structure} · {blocks.length}</SheetTitle>
@@ -1001,7 +1002,7 @@ export function PageEditor() {
 
       {/* Tiroir Réglages. */}
       <Sheet open={mobilePanel === 'settings'} onOpenChange={(open) => setMobilePanel(open ? 'settings' : null)}>
-        <SheetContent side="bottom" className="max-h-[78dvh] gap-0 rounded-t-2xl p-0 xl:hidden">
+        <SheetContent side="bottom" className="max-h-[78dvh] gap-0 rounded-t-2xl p-0 2xl:hidden">
           <SheetHeader className="flex-row items-center justify-between border-b py-3 pr-12 pl-4">
             <SheetTitle className="text-base">
               {selected ? copy.settings : copy.pageStyle}
