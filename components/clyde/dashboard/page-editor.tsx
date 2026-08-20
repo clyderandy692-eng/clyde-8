@@ -82,6 +82,40 @@ import type {
   IdentityMediaBlock,
 } from '@/lib/clyde/types'
 
+/** Aperçu miniature : reconnaître une couverture ou un catalogue va plus vite
+ * que relire huit libellés lors d'un réordonnancement. */
+function BlockThumbnail({ type }: { type: Block['type'] }) {
+  const catalogue = type === 'catalogue' || type === 'categories'
+  const editorial = type === 'hero' || type === 'identity_media'
+
+  return (
+    <span
+      className="flex size-10 shrink-0 flex-col justify-center gap-1 overflow-hidden rounded-md border border-border bg-background p-1"
+      aria-hidden="true"
+    >
+      {catalogue ? (
+        <>
+          <span className="h-1 w-5 rounded-full bg-brand/60" />
+          <span className="grid grid-cols-2 gap-0.5">
+            <span className="h-3 rounded-sm bg-muted-foreground/20" />
+            <span className="h-3 rounded-sm bg-muted-foreground/20" />
+          </span>
+        </>
+      ) : editorial ? (
+        <>
+          <span className="h-4 rounded-sm bg-brand/20" />
+          <span className="h-1 w-6 rounded-full bg-foreground/40" />
+        </>
+      ) : (
+        <>
+          <span className="h-1 w-4 rounded-full bg-brand/60" />
+          <span className="h-1 rounded-full bg-muted-foreground/20" />
+          <span className="h-1 w-6 rounded-full bg-muted-foreground/20" />
+        </>
+      )}
+    </span>
+  )
+}
 
 export function PageEditor() {
   const { locale } = useLocale()
@@ -423,7 +457,6 @@ export function PageEditor() {
             <div className="flex flex-col gap-1">
               {blocks.map((block, index) => {
                 const meta = BLOCK_LIBRARY.find((item) => item.type === block.type)
-                const Icon = ICONS[meta?.icon as keyof typeof ICONS] ?? LayoutGrid
                 const active = selectedId === block.id
                 /* Accordéon réservé au tiroir mobile : sur bureau, la colonne
                    Réglages (ou son tiroir) fait déjà ce travail. */
@@ -453,7 +486,7 @@ export function PageEditor() {
                             }}
                             className={`flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm ${active ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
                           >
-                            <Icon className="size-4 shrink-0" aria-hidden />
+                            <BlockThumbnail type={block.type} />
                             <span className="min-w-0 flex-1 truncate">{meta?.label ?? block.type}</span>
                             {block.hidden && <span className="text-[11px] text-muted-foreground">{copy.hidden}</span>}
                             {mobilePanel === 'structure' && (

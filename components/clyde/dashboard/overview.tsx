@@ -190,19 +190,20 @@ export function DashboardOverview() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Kpi
+          icon={ScrollText}
+          label={d.kpiOrders}
+          value={String(recentOrders.length)}
+          href="/tableau-de-bord/commandes"
+          featured
+        />
         <Kpi
           icon={Eye}
           label={d.kpiVisits}
           value={String(views)}
           delta={trend(views, viewsBefore)}
           href="/tableau-de-bord/analytics"
-        />
-        <Kpi
-          icon={ScrollText}
-          label={d.kpiOrders}
-          value={String(recentOrders.length)}
-          href="/tableau-de-bord/commandes"
         />
         <Kpi
           icon={Wallet}

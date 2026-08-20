@@ -538,10 +538,13 @@ export function Kpi({
   delta,
   hint,
   href,
+  featured = false,
 }: {
   icon: typeof LayoutGrid
   label: string
   value: string
+  /** Indicateur prioritaire : il prend plus de place et porte la lecture. */
+  featured?: boolean
   /** Variation en % sur la période précédente. `null` = incomparable. */
   delta?: number | null
   /** Précision affichée à la place de la variation. */
@@ -571,7 +574,12 @@ export function Kpi({
           />
         ) : null}
       </div>
-      <p className="mt-3 text-2xl font-semibold tracking-tight tabular-nums">
+      <p
+        className={cn(
+          'mt-3 font-semibold tracking-tight tabular-nums',
+          featured ? 'text-4xl sm:text-5xl' : 'text-2xl',
+        )}
+      >
         {value}
       </p>
       {typeof delta === 'number' ? (
@@ -598,7 +606,12 @@ export function Kpi({
     return (
       <Link
         href={href}
-        className="group block rounded-2xl border border-border bg-background p-5 transition-colors hover:border-brand/40"
+        className={cn(
+          'group block rounded-2xl border p-5 transition-colors',
+          featured
+            ? 'border-brand/30 bg-brand/[0.07] sm:col-span-2 lg:col-span-1 lg:row-span-2 lg:flex lg:flex-col lg:justify-between lg:p-6'
+            : 'border-border bg-background hover:border-brand/40',
+        )}
       >
         {content}
       </Link>

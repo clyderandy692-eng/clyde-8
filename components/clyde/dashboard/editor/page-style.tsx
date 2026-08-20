@@ -52,6 +52,11 @@ export function PageStyleSettings({
           aria-pressed={preset === 'vitrine'}
           className={`flex flex-col gap-1 rounded-xl border p-2.5 text-left transition-colors ${preset === 'vitrine' ? 'border-primary ring-2 ring-primary/30' : 'hover:border-muted-foreground/40'}`}
         >
+          <span className="flex h-16 flex-col overflow-hidden rounded-lg border bg-muted/30 p-2" aria-hidden="true">
+            <span className="h-7 rounded bg-primary/20" />
+            <span className="mt-2 h-1.5 w-3/4 rounded-full bg-foreground/25" />
+            <span className="mt-1 h-1.5 w-1/2 rounded-full bg-foreground/15" />
+          </span>
           <span className="text-sm font-semibold">{copy.genreVitrine}</span>
           <span className="text-[11px] leading-snug text-muted-foreground">{copy.genreVitrineDesc}</span>
         </button>
@@ -61,6 +66,12 @@ export function PageStyleSettings({
           aria-pressed={preset === 'commande'}
           className={`flex flex-col gap-1 rounded-xl border p-2.5 text-left transition-colors ${preset === 'commande' ? 'border-primary ring-2 ring-primary/30' : 'hover:border-muted-foreground/40'}`}
         >
+          <span className="grid h-16 grid-cols-2 gap-1.5 overflow-hidden rounded-lg border bg-muted/30 p-2" aria-hidden="true">
+            <span className="rounded bg-primary/20" />
+            <span className="rounded bg-foreground/10" />
+            <span className="rounded bg-foreground/10" />
+            <span className="rounded bg-primary/15" />
+          </span>
           <span className="text-sm font-semibold">{copy.genreCommande}</span>
           <span className="text-[11px] leading-snug text-muted-foreground">{copy.genreCommandeDesc}</span>
         </button>

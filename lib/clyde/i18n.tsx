@@ -80,11 +80,11 @@ const FR = {
 
   hero: {
     badge: 'Votre espace commercial',
-    titleLine1: 'Automatisez votre activité,',
-    titleLine2: 'recevez vos commandes,',
-    titleAccent: 'relancez vos clients.',
+    titleLine1: 'Votre commerce,',
+    titleLine2: 'prêt à vendre.',
+    titleAccent: 'Sans technique.',
     subtitle:
-      'Créez votre vitrine, configurez votre catalogue, activez les réservations. Vos clients commandent depuis leur téléphone\u00a0; vous recevez chaque commande sur WhatsApp avec la table ou le créneau. Contrairement aux réseaux sociaux, vous gardez l\u2019accès complet à vos abonnés et pouvez les relancer directement depuis votre tableau de bord.',
+      'Une page à votre nom pour présenter, vendre et réserver. Chaque commande arrive sur WhatsApp, avec la table ou le créneau — et vos clients restent les vôtres.',
     ctaPrimary: 'Créer ma page gratuitement',
     ctaSecondary: 'Voir une page existante',
     proofs: ['Gratuit 35 jours', 'Sans carte bancaire', 'Sans code'],
@@ -193,7 +193,7 @@ const FR = {
   },
 
   /* La couche narrative du monde CLYDE : une section dédiée, pas une voix
-     diffusée partout. Le mouvement central est la rév�����lation — flou vers
+     diffusée partout. Le mouvement central est la rév������lation — flou vers
      net, invisible vers vu. Le reste de la page garde son ton direct. */
   revelation: {
     kicker: 'La Révélation',
@@ -1105,7 +1105,7 @@ const FR = {
     badge: 'Équipe de développement',
     title: 'Rejoindre l’équipe de développement',
     subtitle:
-      'Vous ne vous abonnez pas à une newsletter. Vous rejoignez l’équipe qui décide de ce que l’Usine construit ensuite.',
+      'Vous ne vous abonnez pas à une newsletter. Vous rejoignez l���équipe qui décide de ce que l’Usine construit ensuite.',
     /* Dit ce qui arrive vraiment dans la boîte : une promesse vague ferait
        s'inscrire des gens qui se sentiraient trompés au premier envoi. */
     promise:
@@ -1818,11 +1818,11 @@ const EN: Dict = {
 
   hero: {
     badge: 'Your commercial space',
-    titleLine1: 'Automate your business,',
-    titleLine2: 'receive your orders,',
-    titleAccent: 're-engage your customers.',
+    titleLine1: 'Your business,',
+    titleLine2: 'ready to sell.',
+    titleAccent: 'No tech required.',
     subtitle:
-      'Set up your storefront, configure your catalogue and activate bookings. Customers order from their phone; you receive every order on WhatsApp with the table or time slot. Unlike social networks, you keep full access to your subscribers and can re-engage them directly from your CLYDE dashboard.',
+      'One page to present, sell and take bookings. Every order lands on WhatsApp with the table or time slot — and your customers remain yours.',
     ctaPrimary: 'Create my page for free',
     ctaSecondary: 'See an existing page',
     proofs: ['Free for 35 days', 'No credit card', 'No code'],

@@ -306,11 +306,15 @@ function PrintSheetBanner({
 
       const origin =
         typeof window === 'undefined' ? 'https://clyde.app' : window.location.origin
+      const brand = getComputedStyle(document.documentElement)
+        .getPropertyValue('--brand-pdf')
+        .trim()
       const doc = buildQrSheet({
         businessName,
         cards,
         scanHint: d.scanHint,
         footer: d.printSheetFooter(`${origin}/r/${slug}`),
+        brand,
       })
 
       downloadBlob(doc.output('blob'), `${safeFilename('qr', slug)}.pdf`)

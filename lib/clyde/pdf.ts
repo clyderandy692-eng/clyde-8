@@ -129,13 +129,10 @@ export interface EngineerCardLabels {
 /**
  * La Carte d'Ingénieur — l'artefact d'intégration.
  *
- * Format A6 portrait (105 × 148 mm) et non une carte de visite : l'objet a
- * deux vies. Dans la poche il prouve l'appartenance ; punaisé près de la
- * caisse, son QR envoie le client sur la page. Une carte de visite serait trop
- * petite pour la seconde, un A4 trop encombrant pour la première.
- *
- * Le QR arrive en PNG depuis un canvas : la génération vit côté composant,
- * cette fonction ne fait que composer le document.
+ * Deux artefacts assument désormais deux usages distincts : une carte bancaire
+ * recto-verso pour le portefeuille, et une affichette A5 dont le QR reste
+ * lisible sur un comptoir. Le QR arrive en PNG depuis un canvas : la génération
+ * vit côté composant, ce module ne fait que composer les documents.
  */
 export interface EngineerArtifactInput {
   engineerName: string
