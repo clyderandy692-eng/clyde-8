@@ -46,6 +46,7 @@ import {
   buildUserDataExport,
   type UserDataExport,
 } from './privacy'
+import { activationKey } from './activation'
 import { pointsBalance } from './goodies'
 import { cartLineKey, linePrice, optionsSummary } from './options'
 import { clampRating } from './reviews'
@@ -263,8 +264,11 @@ interface ClydeState {
   ) => void
 
   /* --- Activation --- */
-  /** Coche ou décoche une étape de la checklist d'activation. */
-  toggleActivationCheck: (businessId: string, step: string) => void
+  /**
+   * Enregistre un fait observé de la prise en main.
+   *
+   * Idempotent et sans retour arrière : voir l'implémentation.
+   */
   markActivationDone: (businessId: string, step: string) => void
 
   /* --- Abonnement CLYDE --- */
@@ -1184,29 +1188,18 @@ export const useClyde = create<ClydeState>()(
       return { events: [...s.events, event], productStats }
     }),
 
-  toggleActivationCheck: (businessId, step) =>
-    set((s) => {
-      const key = `${businessId}:${step}`
-      const done = s.activationChecks.includes(key)
-      return {
-        activationChecks: done
-          ? s.activationChecks.filter((k) => k !== key)
-          : [...s.activationChecks, key],
-      }
-    }),
-
   /*
-   * Constat d'une action réellement observée (un PDF téléchargé, un lien
-   * ouvert), par opposition à la case qu'on cochait à la main.
+   * Constat d'une action réellement observée : un PDF téléchargé, un lien
+   * ouvert, un accueil affiché.
    *
-   * Séparé de `toggleActivationCheck` parce qu'un constat ne s'inverse pas :
-   * plusieurs chemins mènent au même fait — la planche QR et la carte
-   * d'ingénieur contiennent tous deux le code — et un simple bascule aurait
-   * décoché l'étape au second téléchargement.
+   * Volontairement sans opération inverse. Plusieurs chemins mènent au même
+   * fait — la planche QR et la carte d'ingénieur portent tous deux le code — et
+   * une bascule aurait décoché l'étape au second téléchargement. Un fait
+   * observé ne se retire pas : il a eu lieu.
    */
   markActivationDone: (businessId, step) =>
     set((s) => {
-      const key = `${businessId}:${step}`
+      const key = activationKey(businessId, step)
       if (s.activationChecks.includes(key)) return {}
       return { activationChecks: [...s.activationChecks, key] }
     }),
@@ -1883,7 +1876,7 @@ export const useClyde = create<ClydeState>()(
          venu ouvrirait un forum vide.
          v6 : options d'articles (`option_groups`). Les produits enregistrés en
          v5 n'ont pas le champ ; `migrate` repart des graines pour les produits,
-         ce qui rétablit du même coup les options du plat signature. Sans
+         ce qui rétablit du m��me coup les options du plat signature. Sans
          rupture, un visiteur déjà venu verrait une carte sans aucun choix.
          v7 : avis clients. Nouveaux registres, absents des sessions v6 ; la
          rupture leur donne les avis de démonstration plutôt qu'un bloc vide.

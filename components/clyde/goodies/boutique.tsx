@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Check, Coins, Gift, Package } from 'lucide-react'
+import { Photo } from '@/components/clyde/photo'
 import { Reveal } from '@/components/clyde/reveal'
 import { PageHeader } from '@/components/clyde/pages/page-shell'
 import { useLocale, useT } from '@/lib/clyde/i18n'
@@ -300,11 +301,12 @@ function GoodieCard({
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background">
       {/* La photo d'abord : un catalogue sans image ne donne envie de rien. */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
-        <img
+        <Photo
           src={goodie.image || '/placeholder.svg'}
           alt={bi(goodie.name, locale)}
-          className="size-full object-cover"
-          loading="lazy"
+          fill
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover"
         />
         <span className="absolute top-3 left-3 rounded-full border border-border bg-background/90 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-[0.14em] uppercase backdrop-blur">
           {bi(goodie.tag, locale)}
@@ -548,11 +550,12 @@ function Redemptions({ businessId }: { businessId: string }) {
               >
                 <div className="flex min-w-0 items-center gap-3">
                   {goodie ? (
-                    <img
+                    <Photo
                       src={goodie.image || '/placeholder.svg'}
                       alt=""
+                      width={44}
+                      height={44}
                       className="size-11 shrink-0 rounded-lg border border-border object-cover"
-                      loading="lazy"
                     />
                   ) : null}
                   <div className="min-w-0">

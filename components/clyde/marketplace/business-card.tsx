@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { ArrowUpRight, MapPin } from 'lucide-react'
+import { Photo } from '@/components/clyde/photo'
 import { useT } from '@/lib/clyde/i18n'
 import { markInternalNavigation } from '@/lib/clyde/navigation'
 import { CATEGORY_MAP } from '@/lib/clyde/taxonomy'
@@ -45,11 +46,15 @@ export function BusinessCard({
       {/* Cover et identité : la marketplace reflète la vitrine réelle. */}
       <div className="relative flex h-36 items-end gap-3 overflow-hidden px-4 pb-3" style={{ background: brand }}>
         {coverSrc ? (
-          <img
-            src={coverSrc || "/placeholder.svg"}
+          <Photo
+            src={coverSrc}
             alt={`Couverture de ${business.name}`}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            loading="lazy"
+            fill
+            /* La grille passe de une à trois colonnes : réclamer la pleine
+               largeur partout ferait télécharger une image trois fois trop
+               lourde sur un écran d'ordinateur. */
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
         ) : null}
         {/* Sans couverture, la bande reste la couleur de marque : le dégradé
@@ -63,7 +68,13 @@ export function BusinessCard({
           )}
         />
         {business.logo_url ? (
-          <img src={business.logo_url} alt={`Logo de ${business.name}`} className="relative z-10 size-12 rounded-2xl border-2 border-background/80 object-cover shadow-lg" loading="lazy" />
+          <Photo
+            src={business.logo_url}
+            alt={`Logo de ${business.name}`}
+            width={48}
+            height={48}
+            className="relative z-10 size-12 rounded-2xl border-2 border-background/80 object-cover shadow-lg"
+          />
         ) : null}
         <span
           className="relative z-10 truncate text-lg font-bold tracking-tight"

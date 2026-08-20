@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react'
 import { BLOCK_META } from './blocks'
-import { CATEGORY_MAP, FAMILIES, categoryLabel } from './taxonomy'
+import { CATEGORY_MAP, FAMILIES, ITEM_WORDS, categoryLabel } from './taxonomy'
 import type { FamilyId } from './taxonomy'
 import type { BlockType, BusinessCategory } from './types'
 
@@ -1297,12 +1297,28 @@ const FR = {
         step4Title: 'Partagez votre lien',
         step4Done: 'Lien partagé',
         step4Action: 'Voir ma page',
-        markDone: 'Marquer comme fait',
-        undo: 'Annuler',
-        allDone: 'Vos premiers pas sont terminés — votre page est prête à vendre.',
+        /* Accueil de premier lancement : montré une seule fois, au retour de
+           l'inscription. Il situe l'écran, il ne réexplique pas les étapes —
+           elles sont juste en dessous. */
+        welcomeTitle: 'Bienvenue, votre commerce est créé',
+        welcomeBody:
+          'Voici votre tableau de bord. Quatre étapes restent à franchir pour que votre page commence à recevoir des commandes.',
+        welcomeAction: 'Voir mes premiers pas',
+        welcomeDismiss: 'Je regarderai plus tard',
+        /* Relais d'après-activation. Les trois cas sont exclusifs : le plus
+           urgent gagne, et il n'y en a jamais aucun. */
         doneTitle: 'Votre page est prête à travailler',
-        doneHint: 'Prochaine action : consultez les visites et améliorez ce qui attire le plus vos clients.',
+        doneHint:
+          'Prochaine action : consultez les visites et améliorez ce qui attire le plus vos clients.',
         doneAction: 'Voir mes performances',
+        ordersTitle: (n: number) =>
+          `${n} commande${n > 1 ? 's' : ''} attend${n > 1 ? 'ent' : ''} votre réponse`,
+        ordersHint: 'Répondez d’abord aux clients déjà prêts à acheter.',
+        ordersAction: 'Traiter les commandes',
+        photosTitle: (n: number) =>
+          `${n} article${n > 1 ? 's' : ''} sans photo`,
+        photosHint: 'Une photo claire aide vos visiteurs à choisir plus vite.',
+        photosAction: 'Compléter le catalogue',
       },
     },
     orders: {
@@ -1323,14 +1339,18 @@ const FR = {
         cancelled: 'Annulées',
         all: 'Toutes',
       },
-      removedItem: 'Article retiré du catalogue',
+      /* Le mot du métier remplace « Article » : un hôtelier lit « Chambre
+         retirée du catalogue », un coiffeur « Prestation retirée ». Le libellé
+         reçoit le singulier tel que l'expose `useOwnerContext`. */
+      removedItem: (singular: string) => `${singular} retiré(e) du catalogue`,
 
       /* Paniers laissés en route.
          Le vocabulaire évite « abandonné », qui sonne comme un reproche fait
          au client, et parle de ce que le commerçant peut faire : relancer. */
       abandoned: {
         tab: 'Paniers laissés',
-        body: 'Ces clients ont choisi leurs articles sans envoyer la commande. Un message suffit souvent.',
+        body: (plural: string) =>
+          `Ces clients ont choisi leurs ${plural.toLowerCase()} sans envoyer la commande. Un message suffit souvent.`,
         empty: 'Aucun panier en attente.',
         emptyHint:
           'Un panier apparaît ici quand un client a laissé son nom et son WhatsApp sans terminer, depuis plus de 30 minutes.',
@@ -2915,12 +2935,22 @@ const EN: Dict = {
         step4Title: 'Share your link',
         step4Done: 'Link shared',
         step4Action: 'View my page',
-        markDone: 'Mark as done',
-        undo: 'Undo',
-        allDone: 'Your first steps are done — your page is ready to sell.',
+        welcomeTitle: 'Welcome — your business is set up',
+        welcomeBody:
+          'This is your dashboard. Four steps are left before your page can start taking orders.',
+        welcomeAction: 'Show my first steps',
+        welcomeDismiss: 'I’ll look later',
         doneTitle: 'Your page is ready to work',
-        doneHint: 'Next up: check your visits and double down on what attracts customers most.',
+        doneHint:
+          'Next up: check your visits and double down on what attracts customers most.',
         doneAction: 'View my performance',
+        ordersTitle: (n: number) =>
+          `${n} order${n > 1 ? 's' : ''} waiting for your reply`,
+        ordersHint: 'Answer the customers who are already ready to buy.',
+        ordersAction: 'Handle orders',
+        photosTitle: (n: number) => `${n} item${n > 1 ? 's' : ''} without a photo`,
+        photosHint: 'A clear photo helps visitors decide faster.',
+        photosAction: 'Complete my catalogue',
       },
     },
     orders: {
@@ -2941,11 +2971,12 @@ const EN: Dict = {
         cancelled: 'Cancelled',
         all: 'All',
       },
-      removedItem: 'Item removed from the catalogue',
+      removedItem: (singular: string) => `${singular} removed from the catalogue`,
 
       abandoned: {
         tab: 'Left carts',
-        body: 'These customers picked their items without sending the order. A message is often enough.',
+        body: (plural: string) =>
+          `These customers picked their ${plural.toLowerCase()} without sending the order. A message is often enough.`,
         empty: 'No carts waiting.',
         emptyHint:
           'A cart shows up here when a customer left their name and WhatsApp without finishing, more than 30 minutes ago.',
@@ -3497,9 +3528,44 @@ interface TradeWords {
   catalog: string
   location: string
   locationPlural: string
+  /** Nom d'une entrée du catalogue : « Plat », « Chambre », « Prestation ». */
+  item: string
+  itemPlural: string
 }
 
-const TRADE_EN: Record<BusinessCategory, TradeWords> = {
+/* Les noms d'entrées en anglais. Table séparée de `TRADE_EN` pour éviter de
+   rouvrir vingt-trois objets déjà écrits ; `useTradeWords` fusionne les deux.
+   L'anglais reste plus régulier que le français, mais « Property » fait
+   « Properties » — une règle en « + s » se tromperait. */
+const ITEM_EN: Record<BusinessCategory, { singular: string; plural: string }> = {
+  restaurant: { singular: 'Dish', plural: 'Dishes' },
+  cafe: { singular: 'Drink', plural: 'Drinks' },
+  bar: { singular: 'Drink', plural: 'Drinks' },
+  boulangerie_patisserie: { singular: 'Product', plural: 'Products' },
+  traiteur: { singular: 'Package', plural: 'Packages' },
+  hotel: { singular: 'Room', plural: 'Rooms' },
+  location_courte_duree: { singular: 'Property', plural: 'Properties' },
+  coiffure_beaute: { singular: 'Service', plural: 'Services' },
+  spa_bienetre: { singular: 'Treatment', plural: 'Treatments' },
+  sport_coaching: { singular: 'Session', plural: 'Sessions' },
+  boutique_mode: { singular: 'Item', plural: 'Items' },
+  epicerie: { singular: 'Product', plural: 'Products' },
+  fleuriste: { singular: 'Arrangement', plural: 'Arrangements' },
+  electronique_reparation: { singular: 'Product', plural: 'Products' },
+  service_pro: { singular: 'Service', plural: 'Services' },
+  artisan: { singular: 'Piece', plural: 'Pieces' },
+  pressing: { singular: 'Service', plural: 'Services' },
+  auto_garage: { singular: 'Job', plural: 'Jobs' },
+  immobilier: { singular: 'Property', plural: 'Properties' },
+  photographe_studio: { singular: 'Package', plural: 'Packages' },
+  evenementiel: { singular: 'Service', plural: 'Services' },
+  autre: { singular: 'Item', plural: 'Items' },
+}
+
+const TRADE_EN: Record<
+  BusinessCategory,
+  Omit<TradeWords, 'item' | 'itemPlural'>
+> = {
   restaurant: { catalog: 'Menu', location: 'Table', locationPlural: 'Tables' },
   cafe: { catalog: 'Menu', location: 'Table', locationPlural: 'Tables' },
   bar: { catalog: 'Drinks list', location: 'Table', locationPlural: 'Tables' },
@@ -3637,12 +3703,19 @@ export function useTradeWords(): (id: BusinessCategory) => TradeWords {
   const { locale } = useLocaleContext()
   return useCallback(
     (id: BusinessCategory) => {
-      if (locale === 'en') return TRADE_EN[id] ?? TRADE_EN.autre
+      if (locale === 'en') {
+        const trade = TRADE_EN[id] ?? TRADE_EN.autre
+        const item = ITEM_EN[id] ?? ITEM_EN.autre
+        return { ...trade, item: item.singular, itemPlural: item.plural }
+      }
       const meta = CATEGORY_MAP[id] ?? CATEGORY_MAP.autre
+      const item = ITEM_WORDS[id] ?? ITEM_WORDS.autre
       return {
         catalog: meta.catalogWord,
         location: meta.locationWord,
         locationPlural: meta.locationWordPlural,
+        item: item.singular,
+        itemPlural: item.plural,
       }
     },
     [locale],

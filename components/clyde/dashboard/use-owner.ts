@@ -118,5 +118,16 @@ export function useOwnerContext() {
     locationWord: words.location,
     /** Pluriel fourni par le dictionnaire : « Bureaux », pas « Bureaus ». */
     locationWordPlural: words.locationPlural,
+    /**
+     * Nom d'une entrée du catalogue : « Plat », « Chambre », « Prestation ».
+     *
+     * À ne pas confondre avec `catalogWord`, qui nomme le contenant (« Menu »,
+     * « Carte »). C'est ce mot-ci qu'attendent les écrans parlant d'une entrée
+     * précise — commandes, paniers laissés, retrait du catalogue — là où
+     * `catalogWord` donnerait « leurs menu ».
+     */
+    itemWord: words.item,
+    /** Pluriel explicite : « Plats », « Chambres », « Properties ». */
+    itemWordPlural: words.itemPlural,
   }
 }

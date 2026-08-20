@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
+import { Photo } from '@/components/clyde/photo'
 import { Check, Share2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { blockVars, shade } from '@/lib/clyde/theme'
@@ -123,7 +123,7 @@ export function HeroRender({ block, ctx }: { block: HeroBlock; ctx: RenderCtx })
         }}
       >
         {img ? (
-          <Image
+          <Photo
             src={img}
             alt={block.title}
             fill
@@ -234,7 +234,7 @@ export function HeroRender({ block, ctx }: { block: HeroBlock; ctx: RenderCtx })
             }}
           >
             {logoUrl ? (
-              <Image
+              <Photo
                 src={logoUrl}
                 alt={`Photo de profil ${ctx.business.name}`}
                 width={size}

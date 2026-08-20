@@ -11,7 +11,7 @@ import { LandingTestimonials } from '@/components/clyde/landing/testimonials'
 import { FactoryInvitation } from '@/components/clyde/landing/invitation'
 import { Pricing } from '@/components/clyde/landing/pricing'
 import { FinalCta, Footer } from '@/components/clyde/landing/footer'
-import { LofiPlayer } from '@/components/clyde/landing/lofi-player'
+import { LofiPlayerLazy } from '@/components/clyde/landing/lofi-player-lazy'
 
 export const metadata: Metadata = {
   title: 'CLYDE — Votre commerce. Une page. Zéro technique.',
@@ -61,7 +61,8 @@ export default function LandingPage() {
         <FinalCta />
       </main>
       <Footer />
-      <LofiPlayer />
+      {/* Chargé après le premier écran : voir `lofi-player-lazy`. */}
+      <LofiPlayerLazy />
     </div>
   )
 }

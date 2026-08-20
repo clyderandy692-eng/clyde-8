@@ -1,12 +1,15 @@
+import { remoteImagePatterns } from './lib/clyde/image-hosts.mjs'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
   images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: 'hebbkx1anhila5yf.public.blob.vercel-storage.com' },
-    ],
+    /* Même source que le composant `Photo`, qui décide au rendu si une URL peut
+       être optimisée. Deux listes séparées se seraient désynchronisées, et
+       l'écart ne se voit qu'en production, sur une image vide. */
+    remotePatterns: remoteImagePatterns,
   },
   /* Durcissement de base du site déployé. Pas de X-Frame-Options : les
      vitrines publiques (/r/…) sont faites pour être partagées et intégrées.

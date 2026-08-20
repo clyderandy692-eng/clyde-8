@@ -267,6 +267,53 @@ export const CATEGORIES: CategoryMeta[] = [
   },
 ]
 
+/* ------------------------------------------------------------
+   Le nom d'une entrée du catalogue
+
+   `catalogWord` nomme le contenant — « Menu », « Carte »,
+   « Chambres & services ». Il ne peut donc pas désigner une entrée :
+   « ces clients ont choisi leurs menu » ne se dit pas. Ce couple-ci
+   nomme l'entrée elle-même, et sert partout où l'interface parlait
+   d'« article » : commandes, paniers laissés, retrait du catalogue.
+
+   Le pluriel est explicite parce que le français ne se devine pas —
+   « Boisson » fait « Boissons », mais « Soin du visage » ne prend pas
+   la même marque selon la tournure, et « Réalisations » est déjà
+   pluriel. Une règle automatique produirait « Menus » là où le métier
+   dit « Plats ».
+   ------------------------------------------------------------ */
+export interface ItemWords {
+  /** « Plat », « Chambre », « Prestation »… au singulier. */
+  singular: string
+  /** « Plats », « Chambres », « Prestations »… au pluriel. */
+  plural: string
+}
+
+export const ITEM_WORDS: Record<BusinessCategory, ItemWords> = {
+  restaurant: { singular: 'Plat', plural: 'Plats' },
+  cafe: { singular: 'Boisson', plural: 'Boissons' },
+  bar: { singular: 'Boisson', plural: 'Boissons' },
+  boulangerie_patisserie: { singular: 'Produit', plural: 'Produits' },
+  traiteur: { singular: 'Formule', plural: 'Formules' },
+  hotel: { singular: 'Chambre', plural: 'Chambres' },
+  location_courte_duree: { singular: 'Logement', plural: 'Logements' },
+  coiffure_beaute: { singular: 'Prestation', plural: 'Prestations' },
+  spa_bienetre: { singular: 'Soin', plural: 'Soins' },
+  sport_coaching: { singular: 'Séance', plural: 'Séances' },
+  boutique_mode: { singular: 'Article', plural: 'Articles' },
+  epicerie: { singular: 'Produit', plural: 'Produits' },
+  fleuriste: { singular: 'Composition', plural: 'Compositions' },
+  electronique_reparation: { singular: 'Produit', plural: 'Produits' },
+  service_pro: { singular: 'Prestation', plural: 'Prestations' },
+  artisan: { singular: 'Réalisation', plural: 'Réalisations' },
+  pressing: { singular: 'Service', plural: 'Services' },
+  auto_garage: { singular: 'Intervention', plural: 'Interventions' },
+  immobilier: { singular: 'Bien', plural: 'Biens' },
+  photographe_studio: { singular: 'Formule', plural: 'Formules' },
+  evenementiel: { singular: 'Prestation', plural: 'Prestations' },
+  autre: { singular: 'Article', plural: 'Articles' },
+}
+
 export const CATEGORY_MAP: Record<BusinessCategory, CategoryMeta> =
   CATEGORIES.reduce(
     (acc, c) => {

@@ -8,6 +8,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useClyde } from '../store'
 import { DEMO_BUSINESSES, DEMO_USERS } from '../demo-data'
+import {
+  ACTIVATION_QR_KEY,
+  ACTIVATION_SHARE_KEY,
+  activationKey,
+  hasActivationCheck,
+} from '../activation'
 
 const initial = useClyde.getState()
 
@@ -141,5 +147,47 @@ describe('paliers d’abonnés, vus du store', () => {
         (b) => b.business_id === business.id && b.related_milestone === 20,
       )
     expect(milestoneBonuses).toHaveLength(1)
+  })
+})
+
+describe('constats d’activation', () => {
+  beforeEach(() => {
+    useClyde.setState({ activationChecks: [] })
+  })
+
+  it('enregistre un fait observé une seule fois', () => {
+    useClyde.getState().markActivationDone(business.id, ACTIVATION_QR_KEY)
+
+    expect(useClyde.getState().activationChecks).toEqual([
+      activationKey(business.id, ACTIVATION_QR_KEY),
+    ])
+  })
+
+  /* Régression : la carte d'ingénieur et l'affichette portent tous deux le QR
+     code, et la checklist propose elle aussi le téléchargement. Trois chemins,
+     un seul fait — l'ancienne bascule décochait l'étape au second passage. */
+  it('reste stable quand le même geste est refait par un autre chemin', () => {
+    const state = useClyde.getState()
+    state.markActivationDone(business.id, ACTIVATION_QR_KEY)
+    state.markActivationDone(business.id, ACTIVATION_QR_KEY)
+    state.markActivationDone(business.id, ACTIVATION_QR_KEY)
+
+    expect(useClyde.getState().activationChecks).toHaveLength(1)
+  })
+
+  it('n’attribue pas le constat d’un commerce à un autre', () => {
+    useClyde.getState().markActivationDone(business.id, ACTIVATION_SHARE_KEY)
+    const checks = useClyde.getState().activationChecks
+
+    expect(hasActivationCheck(checks, business.id, ACTIVATION_SHARE_KEY)).toBe(true)
+    expect(hasActivationCheck(checks, 'biz_autre', ACTIVATION_SHARE_KEY)).toBe(false)
+  })
+
+  it('distingue deux gestes différents du même commerce', () => {
+    const state = useClyde.getState()
+    state.markActivationDone(business.id, ACTIVATION_QR_KEY)
+    state.markActivationDone(business.id, ACTIVATION_SHARE_KEY)
+
+    expect(useClyde.getState().activationChecks).toHaveLength(2)
   })
 })

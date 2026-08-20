@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { BusinessCard } from '@/components/clyde/marketplace/business-card'
+import { Photo } from '@/components/clyde/photo'
 import { Reveal } from '@/components/clyde/reveal'
 import { demoCover } from '@/lib/clyde/demo-media'
 import { markInternalNavigation } from '@/lib/clyde/navigation'
@@ -186,11 +187,12 @@ export function MarketplaceDirectory() {
                     }}
                   >
                     {b.logo_url ? (
-                      <img
-                        src={b.logo_url || '/placeholder.svg'}
+                      <Photo
+                        src={b.logo_url}
                         alt=""
+                        width={44}
+                        height={44}
                         className="h-full w-full object-cover"
-                        loading="lazy"
                       />
                     ) : (
                       b.name.slice(0, 2).toUpperCase()
@@ -236,11 +238,12 @@ export function MarketplaceDirectory() {
                       }}
                     >
                       {b.logo_url ? (
-                        <img
-                          src={b.logo_url || '/placeholder.svg'}
+                        <Photo
+                          src={b.logo_url}
                           alt=""
+                          width={44}
+                          height={44}
                           className="h-full w-full object-cover"
-                          loading="lazy"
                         />
                       ) : (
                         b.name.slice(0, 2).toUpperCase()
