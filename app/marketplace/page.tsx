@@ -20,7 +20,10 @@ export const metadata: Metadata = {
 
 export default function MarketplacePage() {
   return (
-    <div className="relative min-h-dvh bg-background font-sans text-foreground">
+    /* `overflow-clip` : rogne le fond décoratif de 1900 px, qui étendait la
+       zone de défilement sous le contenu des pages courtes. Mécanisme
+       détaillé dans `dashboard/shell.tsx`. */
+    <div className="relative min-h-dvh overflow-clip bg-background font-sans text-foreground">
       {/* Étals : un annuaire est un plan de marché, des rangées de vitrines
           que l'on parcourt du regard. Halo à l'entrée. */}
       <Backdrop pattern="stalls" glow />

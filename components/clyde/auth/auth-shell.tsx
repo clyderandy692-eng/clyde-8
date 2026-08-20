@@ -23,7 +23,11 @@ export function AuthShell({
   aside: { heading: string; points: string[] }
 }) {
   return (
-    <main className="relative flex min-h-dvh flex-col lg:flex-row">
+    /* `overflow-clip` : rogne le fond décoratif de 1900 px, qui étendait la
+       zone de défilement sous le contenu des pages courtes — les formulaires
+       de connexion sont précisément les plus courts. Mécanisme détaillé dans
+       `dashboard/shell.tsx`. */
+    <main className="relative flex min-h-dvh flex-col overflow-clip lg:flex-row">
       {/* Cartouche : le cadre d'identification en bas d'un plan, celui où l'on
           inscrit qui signe. C'est exactement ce que fait cet écran. Trame
           discrète et sans halo — un formulaire de connexion doit se remplir,

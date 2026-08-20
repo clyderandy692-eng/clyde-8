@@ -84,7 +84,10 @@ export function AdminFollowers() {
   }
 
   return (
-    <main className="relative min-h-dvh bg-secondary/30 px-4 py-6 md:px-8 md:py-10">
+    /* `overflow-clip` : rogne le fond décoratif de 1900 px, qui étendait la
+       zone de défilement sous le contenu des pages courtes. Mécanisme
+       détaillé dans `dashboard/shell.tsx`. */
+    <main className="relative min-h-dvh overflow-clip bg-secondary/30 px-4 py-6 md:px-8 md:py-10">
       <Backdrop pattern="ledger" />
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-8 pb-20 md:pb-0">
         <header className="flex flex-wrap items-start justify-between gap-4">
