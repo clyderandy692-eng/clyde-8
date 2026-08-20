@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils'
    nouvelle page dans le silence visuel — c'est cette absence de réponse qui
    faisait paraître « Créer » et « Explorer » lents ou cassés. */
 const BOTTOM_ITEM =
-  'flex min-h-11 min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-1.5 text-center text-[10px] font-semibold tracking-tight text-muted-foreground transition-transform duration-75 hover:bg-secondary hover:text-foreground active:scale-95'
+  'flex min-h-11 min-w-14 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-1.5 text-center text-[10px] font-semibold tracking-tight text-muted-foreground transition-transform duration-75 hover:bg-secondary hover:text-foreground active:scale-95'
 /* L'action centrale garde sa largeur fixe (elle est surélevée et ne doit pas
    se déformer), mais ne rétrécit jamais. */
 const BOTTOM_PRIMARY =
@@ -444,7 +444,7 @@ export function LandingNav({
           restaient sans effet. */}
       <nav
         aria-label="Navigation mobile"
-        className="fixed inset-x-3 bottom-3 z-50 flex items-stretch rounded-2xl border border-border bg-background p-2 shadow-[0_16px_40px_-20px_rgba(23,20,18,0.45)] md:hidden"
+        className="fixed inset-x-3 bottom-3 z-50 flex items-end justify-around rounded-[1.6rem] border border-border bg-background/95 px-2 pt-2 pb-[max(0.55rem,env(safe-area-inset-bottom))] shadow-[0_16px_40px_-18px_rgba(0,0,0,0.5)] backdrop-blur-xl lg:hidden"
       >
         {(onMarketplace
           ? [

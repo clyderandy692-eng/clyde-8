@@ -162,7 +162,7 @@ export function ClientSpace() {
   }))
 
   return (
-    <main className="relative min-h-dvh bg-background text-foreground">
+    <main className="relative min-h-dvh bg-background pb-24 text-foreground lg:pb-0">
       {/* Registre : un client vient ici relire ses commandes et ses
           réservations, c'est un relevé de compte. */}
       <Backdrop pattern="ledger" />
@@ -184,7 +184,7 @@ export function ClientSpace() {
                 type="button"
                 onClick={leaveAccount}
                 aria-label="Se déconnecter"
-                className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive lg:hidden"
+                className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive lg:hidden"
               >
                 <LogOut className="size-4" aria-hidden="true" />
               </button>
@@ -331,8 +331,6 @@ const business = businesses.find((item) => item.id === order.business_id)
       </div>
 
       <MobileDock label="Navigation espace client" items={mobileItems} />
-      {/* Réserve de place pour que la barre ne recouvre pas le contenu. */}
-      <div className="h-24 lg:hidden" aria-hidden="true" />
     </main>
   )
 }
@@ -343,7 +341,7 @@ function FavoriteSection({ products, onToggle, onSeeAll }: { products: Product[]
 
 function FavoriteGrid({ products, onToggle, compact = false }: { products: Product[]; onToggle: (id: string) => void; compact?: boolean }) {
   if (products.length === 0) return <ClientEmptyState title="Aucun favori" description="Ajoutez un cœur depuis la marketplace pour retrouver ici vos produits et services préférés." />
-  return <div className={cn('mt-4 grid gap-3 sm:grid-cols-2', compact ? 'lg:grid-cols-3' : 'lg:grid-cols-3')}>{products.map((product) => <article key={product.id} className="group overflow-hidden rounded-3xl border border-border bg-card"><div className="relative aspect-[1.45] overflow-hidden bg-muted"><img src={productImage(product) || "/placeholder.svg"} alt={product.name} className="size-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" /><button type="button" onClick={() => onToggle(product.id)} aria-label={`Retirer ${product.name} des favoris`} className="absolute top-3 right-3 flex size-9 items-center justify-center rounded-full bg-background/90 text-brand shadow-sm"><Heart className="size-4 fill-current" aria-hidden="true" /></button></div><div className="p-4"><p className="line-clamp-1 font-semibold">{product.name}</p><p className="mt-1 text-sm text-muted-foreground">{formatPrice(product.price, 'XAF')}</p></div></article>)}</div>
+  return <div className={cn('mt-4 grid gap-3 sm:grid-cols-2', compact ? 'lg:grid-cols-3' : 'lg:grid-cols-3')}>{products.map((product) => <article key={product.id} className="group overflow-hidden rounded-3xl border border-border bg-card"><div className="relative aspect-[1.45] overflow-hidden bg-muted"><img src={productImage(product) || "/placeholder.svg"} alt={product.name} className="size-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" /><button type="button" onClick={() => onToggle(product.id)} aria-label={`Retirer ${product.name} des favoris`} className="absolute top-3 right-3 flex size-11 items-center justify-center rounded-full bg-background/90 text-brand shadow-sm"><Heart className="size-4 fill-current" aria-hidden="true" /></button></div><div className="p-4"><p className="line-clamp-1 font-semibold">{product.name}</p><p className="mt-1 text-sm text-muted-foreground">{formatPrice(product.price, 'XAF')}</p></div></article>)}</div>
 }
 
 function FollowsPanel({ shops }: { shops: Business[] }) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarDays, Grid2X2, Home, LayoutGrid, Plus, Search, Settings2 } from 'lucide-react'
+import { BarChart3, CalendarDays, CreditCard, Grid2X2, Home, LayoutGrid, PackageCheck, Plus, Search, Settings2, SlidersHorizontal } from 'lucide-react'
 import { MobileDock, type MobileDockItem } from '@/components/clyde/mobile-dock'
 import { useEditorDock } from '@/lib/clyde/editor-dock'
 
@@ -16,12 +16,20 @@ export function DashboardMobileNav({ pathname }: { pathname: string }) {
   }
   const onEditor = pathname.startsWith(EDITOR_PATH) && Boolean(openPanel)
 
+  const moreItems = [
+    { href: '/tableau-de-bord/commandes', label: 'Commandes', icon: PackageCheck },
+    { href: '/tableau-de-bord/analytics', label: 'Statistiques', icon: BarChart3 },
+    { href: '/tableau-de-bord/modules', label: 'Modules', icon: SlidersHorizontal },
+    { href: '/tableau-de-bord/abonnement', label: 'Abonnement', icon: CreditCard },
+  ]
+  const moreActive = moreItems.some(({ href }) => pathname === href || pathname.startsWith(`${href}/`))
+
   const navItems: MobileDockItem[] = [
     { key: 'home', href: '/tableau-de-bord', label: 'Accueil', icon: Home, active: pathname === '/tableau-de-bord' },
     { key: 'agenda', href: '/tableau-de-bord/reservations', label: 'Agenda', icon: CalendarDays, active: pathname.startsWith('/tableau-de-bord/reservations') },
     { key: 'add', href: EDITOR_PATH, label: 'Ajouter', icon: Plus, primary: true, active: pathname.startsWith(EDITOR_PATH) },
     { key: 'catalog', href: '/tableau-de-bord/catalogue', label: 'Catalogue', icon: Search, active: pathname.startsWith('/tableau-de-bord/catalogue') },
-    { key: 'more', href: '/tableau-de-bord/modules', label: 'Plus', icon: Grid2X2, active: pathname.startsWith('/tableau-de-bord/modules') },
+    { key: 'more', label: 'Plus', icon: Grid2X2, active: moreActive, menuItems: moreItems },
   ]
 
   const editorItems: MobileDockItem[] = [
@@ -29,7 +37,7 @@ export function DashboardMobileNav({ pathname }: { pathname: string }) {
     { key: 'structure', onClick: () => openEditorPanel('structure'), label: 'Structure', icon: LayoutGrid, active: activePanel === 'structure' },
     { key: 'add', onClick: () => openEditorPanel('library'), label: 'Ajouter', icon: Plus, primary: true, active: activePanel === 'library' },
     { key: 'settings', onClick: () => openEditorPanel('settings'), label: 'Réglages', icon: Settings2, active: activePanel === 'settings' },
-    { key: 'more', href: '/tableau-de-bord/modules', label: 'Plus', icon: Grid2X2 },
+    { key: 'more', label: 'Plus', icon: Grid2X2, active: moreActive, menuItems: moreItems },
   ]
 
   return (

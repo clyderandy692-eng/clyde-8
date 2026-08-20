@@ -408,6 +408,7 @@ export function PageEditor() {
      bibliothèque : sur un téléphone, ajouter un bloc est le geste le plus
      fréquent, et il ne doit pas coûter deux appuis. */
   const registerDock = useEditorDock((s) => s.register)
+  const setDockActivePanel = useEditorDock((s) => s.setActivePanel)
   useEffect(() => {
     registerDock((panel) => {
       if (panel === 'library') {
@@ -421,7 +422,11 @@ export function PageEditor() {
   }, [registerDock])
 
   useEffect(() => {
-    const media = window.matchMedia('(max-width: 767px)')
+    setDockActivePanel(addOpen && mobilePanel === 'structure' ? 'library' : mobilePanel)
+  }, [addOpen, mobilePanel, setDockActivePanel])
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1023px)')
     setPreviewDevice(media.matches ? 'mobile' : 'desktop')
   }, [])
 

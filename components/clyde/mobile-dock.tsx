@@ -2,6 +2,14 @@
 
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
 export type MobileDockItem = {
@@ -13,6 +21,11 @@ export type MobileDockItem = {
   href?: string
   onClick?: () => void
   badge?: number
+  menuItems?: Array<{
+    href: string
+    label: string
+    icon: LucideIcon
+  }>
 }
 
 export function MobileDock({
@@ -27,7 +40,7 @@ export function MobileDock({
       aria-label={label}
       className="fixed inset-x-3 bottom-3 z-40 flex items-end justify-around rounded-[1.6rem] border border-border bg-background/95 px-2 pt-2 pb-[max(0.55rem,env(safe-area-inset-bottom))] shadow-[0_16px_40px_-18px_rgba(0,0,0,0.5)] backdrop-blur-xl lg:hidden"
     >
-      {items.map(({ key, href, label: itemLabel, icon: Icon, primary, active, onClick, badge }) => {
+      {items.map(({ key, href, label: itemLabel, icon: Icon, primary, active, onClick, badge, menuItems }) => {
         const content = (
           <>
             <span
@@ -62,18 +75,37 @@ export function MobileDock({
           primary && '-mt-8',
         )
 
+        if (menuItems) {
+          return (
+            <DropdownMenu key={key}>
+              <DropdownMenuTrigger
+                aria-label={itemLabel}
+                className={className}
+                render={<button type="button" />}
+              >
+                {content}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="end" sideOffset={14} className="min-w-56 rounded-2xl p-2">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Plus d’outils</DropdownMenuLabel>
+                  {menuItems.map(({ href: menuHref, label: menuLabel, icon: MenuIcon }) => (
+                    <DropdownMenuItem key={menuHref} className="min-h-11 rounded-xl px-3 py-2" render={<Link href={menuHref} />}>
+                      <MenuIcon aria-hidden="true" />
+                      {menuLabel}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        }
+
         return href ? (
           <Link key={key} href={href} aria-current={active ? 'page' : undefined} className={className}>
             {content}
           </Link>
         ) : (
-          <button
-            key={key}
-            type="button"
-            onClick={onClick}
-            aria-pressed={active}
-            className={className}
-          >
+          <button key={key} type="button" onClick={onClick} aria-pressed={active} className={className}>
             {content}
           </button>
         )
