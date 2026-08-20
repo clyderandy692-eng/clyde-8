@@ -22,10 +22,14 @@ type EditorDockState = {
    * reprend exactement sa navigation habituelle.
    */
   open: ((panel: EditorPanel) => void) | null
+  activePanel: EditorPanel | null
   register: (open: ((panel: EditorPanel) => void) | null) => void
+  setActivePanel: (panel: EditorPanel | null) => void
 }
 
 export const useEditorDock = create<EditorDockState>((set) => ({
   open: null,
-  register: (open) => set({ open }),
+  activePanel: null,
+  register: (open) => set({ open, activePanel: null }),
+  setActivePanel: (activePanel) => set({ activePanel }),
 }))

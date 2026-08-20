@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Building2, Flag, GraduationCap, LayoutDashboard, Package, ShieldCheck, ShoppingBag, Users } from 'lucide-react'
+import { ArrowLeft, Building2, Flag, LayoutDashboard, Package, ShieldCheck, ShoppingBag, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Backdrop } from '@/components/clyde/backdrop'
 import { NotificationsBell } from '@/components/clyde/notifications-bell'
@@ -278,35 +278,7 @@ export function AdminOverview() {
           </div>
         </section>
       </div>
-      {/* Menu mobile adapté au profil admin : les sections de supervision de
-          la plateforme, pas les outils d'une boutique. */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-border bg-background/95 px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-18px_rgba(0,0,0,0.45)] backdrop-blur-md md:hidden" aria-label="Navigation administration">
-        {/* Les sections qui appellent une décision d'abord : sur mobile, la
-            barre est la seule table des matières disponible. Le compteur est
-            porté sur l'onglet pour qu'un arbitrage en attente se voie sans
-            avoir à ouvrir la section. */}
-        <a href="#apercu" className="flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-semibold text-brand"><ShieldCheck className="size-5" aria-hidden="true" /><span>Aperçu</span></a>
-        <a href="#arbitrage" className="relative flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-semibold text-muted-foreground">
-          <Flag className="size-5" aria-hidden="true" />
-          <span>Arbitrage</span>
-          {pendingReportCount > 0 ? (
-            <span className="absolute top-0 right-1.5 grid size-4 place-items-center rounded-full bg-brand font-mono text-[9px] font-bold text-brand-foreground">
-              {pendingReportCount}
-            </span>
-          ) : null}
-        </a>
-        <a href="#echanges" className="relative flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-semibold text-muted-foreground">
-          <Package className="size-5" aria-hidden="true" />
-          <span>Échanges</span>
-          {openRedemptionCount > 0 ? (
-            <span className="absolute top-0 right-1.5 grid size-4 place-items-center rounded-full bg-brand font-mono text-[9px] font-bold text-brand-foreground">
-              {openRedemptionCount}
-            </span>
-          ) : null}
-        </a>
-        <a href="#formations" className="flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-semibold text-muted-foreground"><GraduationCap className="size-5" aria-hidden="true" /><span>Cours</span></a>
-        <a href="#utilisateurs" className="flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-semibold text-muted-foreground"><Users className="size-5" aria-hidden="true" /><span>Comptes</span></a>
-      </nav>
+
     </main>
   )
 }

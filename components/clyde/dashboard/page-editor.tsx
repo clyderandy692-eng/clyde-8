@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useState } from 'react'
 import {
   ChevronDown,
   ChevronUp,
@@ -378,7 +378,6 @@ export function PageEditor() {
   const availability = useClyde((s) => s.availability)
   const [selectedId, setSelectedId] = useState<string | null>(page?.layout_json[0]?.id ?? null)
   const [addOpen, setAddOpen] = useState(false)
-  const [previewKey, setPreviewKey] = useState(0)
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
   /* Sur téléphone, structure et réglages vivent dans des tiroirs bas : la
      page ne montre que l'aperçu — trois cartes empilées noyaient l'écran. */
@@ -428,21 +427,25 @@ export function PageEditor() {
 
   /* Raccourcis d'annulation. Ignorés pendant une saisie : dans un champ de
      texte, Ctrl+Z doit annuler les caractères tapés, pas la mise en page.
-     Les fonctions `undo`/`redo` sont des déclarations hoistées du corps du
-     composant, donc résolues à l'exécution de l'écouteur. */
+     L'Effect Event lit toujours le dernier historique sans forcer le
+     rattachement de l'écouteur à chaque rendu. */
+  const handleHistoryShortcut = useEffectEvent((event: KeyboardEvent) => {
+    if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'z') return
+    const target = event.target as HTMLElement | null
+    const tag = target?.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return
+    event.preventDefault()
+    if (event.shiftKey) redo()
+    else undo()
+  })
+
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'z') return
-      const target = event.target as HTMLElement | null
-      const tag = target?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return
-      event.preventDefault()
-      if (event.shiftKey) redo()
-      else undo()
+      handleHistoryShortcut(event)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  })
+  }, [])
 
 
   const blocks = page?.layout_json ?? []
@@ -462,14 +465,12 @@ export function PageEditor() {
     setPast((stack) => [...stack.slice(-49), blocks])
     setFuture([])
     updateLayout(business!.id, next)
-    setPreviewKey((key) => key + 1)
   }
 
   /* Restaure un état sans l'empiler à son tour : on déplace entre les deux
      piles au lieu de passer par `commit()`, qui écraserait l'historique. */
   function restore(next: Block[]) {
     updateLayout(business!.id, next)
-    setPreviewKey((key) => key + 1)
     /* Le bloc sélectionné peut ne plus exister dans l'état restauré (annulation
        d'un ajout) : la sélection retombe alors sur le style global. */
     setSelectedId((current) =>
@@ -676,7 +677,7 @@ export function PageEditor() {
                               businessId={business.id}
                               products={products}
                               copy={copy}
-                              onChange={(patch) => commit(updateBlock(blocks, block.id, patch))}
+                              onChange={(patch) => commit(updateEditorBlock(blocks, block.id, patch))}
                             />
                             <Button
                               variant="ghost"
@@ -719,7 +720,6 @@ export function PageEditor() {
         onTheme={(theme, alsoResetBlocks) => {
           updateTheme(business.id, theme)
           if (alsoResetBlocks) commit(resetBlockColors(blocks))
-          else setPreviewKey((key) => key + 1)
         }}
       />
       <Separator />
@@ -912,7 +912,7 @@ export function PageEditor() {
                   Sur grand écran, le simulateur occupe toute la carte. */}
               <div className="clyde-no-scrollbar h-[calc(100dvh-27rem)] min-h-[20rem] overflow-y-auto lg:h-full lg:min-h-[540px]">
                 <PageRenderer
-                  key={`${previewKey}-${previewDevice}`}
+                  key={previewDevice}
                   business={business}
                   products={products}
                   availability={availability}
