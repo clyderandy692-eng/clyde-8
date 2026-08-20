@@ -41,6 +41,12 @@ import { formatPrice } from '@/lib/clyde/taxonomy'
 import { demoCover } from '@/lib/clyde/demo-media'
 import { averageRating, businessReviews } from '@/lib/clyde/reviews'
 import { useClyde, useClydeReady, useSession } from '@/lib/clyde/store'
+import {
+  bookedRangesForDay as getBookedRangesForDay,
+  freeSlotsForDay as getFreeSlotsForDay,
+  slotStepForDay as getSlotStepForDay,
+  slotsForDay as getSlotsForDay,
+} from './blocks/booking'
 import type {
   AvailabilityRule,
   Block,
@@ -1569,27 +1575,7 @@ function useCountdown(endsAt: string | null) {
    ============================================================ */
 
 export function slotsForDay(rules: AvailabilityRule[], date: Date): string[] {
-  const dow = date.getDay()
-  /* Un Set, pas un tableau : deux règles du même jour peuvent se chevaucher
-     (deux emplacements, deux plages qui se recoupent) et produire la même
-     heure deux fois — deux boutons « 13:00 » dans la grille, et React qui
-     proteste sur les clés dupliquées. On trie à la fin : l'ordre d'itération
-     des règles ne garantit pas l'ordre chronologique. */
-  const out = new Set<string>()
-  for (const r of rules) {
-    if (r.day_of_week !== dow) continue
-    const [sh, sm] = r.start_time.split(':').map(Number)
-    const [eh, em] = r.end_time.split(':').map(Number)
-    let cur = sh * 60 + sm
-    const end = eh * 60 + em
-    while (cur + r.slot_duration_minutes <= end) {
-      out.add(
-        `${String(Math.floor(cur / 60)).padStart(2, '0')}:${String(cur % 60).padStart(2, '0')}`,
-      )
-      cur += r.slot_duration_minutes
-    }
-  }
-  return [...out].sort()
+  return getSlotsForDay(rules, date)
 }
 
 /**
@@ -1600,17 +1586,8 @@ export function slotsForDay(rules: AvailabilityRule[], date: Date): string[] {
  * qu'une durée arbitraire qui chevaucherait le suivant. `null` quand le jour est
  * fermé : il n'y a alors pas de pas à multiplier.
  */
-export function slotStepForDay(
-  rules: AvailabilityRule[],
-  date: Date,
-): number | null {
-  const dow = date.getDay()
-  const steps = rules
-    .filter((r) => r.day_of_week === dow)
-    .map((r) => r.slot_duration_minutes)
-  /* Plusieurs plages peuvent cohabiter (matin, soir) avec des pas différents :
-     le plus petit est le seul qui reste valable partout. */
-  return steps.length ? Math.min(...steps) : null
+export function slotStepForDay(rules: AvailabilityRule[], date: Date): number | null {
+  return getSlotStepForDay(rules, date)
 }
 
 /**
@@ -1627,19 +1604,7 @@ export function bookedRangesForDay(
   date: Date,
   fallbackMinutes: number,
 ): Array<[number, number]> {
-  const y = date.getFullYear()
-  const m = date.getMonth()
-  const d = date.getDate()
-  const out: Array<[number, number]> = []
-  for (const b of bookings) {
-    if (b.business_id !== businessId) continue
-    if (b.status !== 'pending' && b.status !== 'confirmed') continue
-    const start = new Date(b.start_at)
-    if (start.getFullYear() !== y || start.getMonth() !== m || start.getDate() !== d) continue
-    const from = start.getHours() * 60 + start.getMinutes()
-    out.push([from, from + (b.duration_minutes ?? fallbackMinutes)])
-  }
-  return out
+  return getBookedRangesForDay(bookings, businessId, date, fallbackMinutes)
 }
 
 /**
@@ -1656,18 +1621,7 @@ export function freeSlotsForDay(
   businessId: string,
   durationMinutes?: number,
 ): string[] {
-  const all = slotsForDay(rules, date)
-  if (!all.length) return all
-  const step = slotStepForDay(rules, date) ?? 60
-  const span = durationMinutes ?? step
-  const taken = bookedRangesForDay(bookings, businessId, date, step)
-  if (!taken.length) return all
-  return all.filter((s) => {
-    const [h, m] = s.split(':').map(Number)
-    const from = h * 60 + m
-    const to = from + span
-    return !taken.some(([bFrom, bTo]) => from < bTo && to > bFrom)
-  })
+  return getFreeSlotsForDay(rules, date, bookings, businessId, durationMinutes)
 }
 
 const DAY_SHORT = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']

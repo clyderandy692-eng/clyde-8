@@ -38,7 +38,7 @@ export function MobileDock({
   return (
     <nav
       aria-label={label}
-      className="fixed inset-x-3 bottom-3 z-40 flex items-end justify-around rounded-[1.6rem] border border-border bg-background/95 px-2 pt-2 pb-[max(0.55rem,env(safe-area-inset-bottom))] shadow-[0_16px_40px_-18px_rgba(0,0,0,0.5)] backdrop-blur-xl lg:hidden"
+      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex items-end justify-around rounded-[1.6rem] border border-border bg-background/95 px-2 pt-2 pb-2 shadow-[0_16px_40px_-18px_rgba(0,0,0,0.5)] backdrop-blur-xl lg:hidden"
     >
       {items.map(({ key, href, label: itemLabel, icon: Icon, primary, active, onClick, badge, menuItems }) => {
         const content = (

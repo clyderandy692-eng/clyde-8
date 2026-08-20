@@ -25,8 +25,6 @@ import {
   CalendarClock,
   GalleryHorizontal,
   BadgePercent,
-  Undo2,
-  Redo2,
   Circle,
 } from 'lucide-react'
 import {
@@ -43,10 +41,8 @@ import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifi
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -57,8 +53,11 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { PageRenderer } from '@/components/clyde/page/renderer'
 import { MediaUploader } from './media-uploader'
+import { EditorToolbar } from './editor/editor-toolbar'
+import { SortableBlockRow } from './editor/sortable-block-row'
 import { BLOCK_LIBRARY, BLOCK_META, createBlock } from '@/lib/clyde/blocks'
 import { useEditorDock } from '@/lib/clyde/editor-dock'
+import { useEditorSession } from '@/lib/clyde/editor-session'
 import {
   moveEditorBlock,
   removeEditorBlock,
@@ -343,31 +342,6 @@ const LABELS = {
 
 type Copy = (typeof LABELS)[keyof typeof LABELS]
 
-/**
- * Enveloppe triable d'une ligne de bloc. La poignée seule saisit le bloc
- * (`handleProps` posés sur le grip) : le reste de la ligne garde ses taps —
- * s��lection, flèches, interrupteur.
- */
-function SortableBlockRow({
-  id,
-  children,
-}: {
-  id: string
-  children: (args: { handleProps: Record<string, unknown> }) => React.ReactNode
-}) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id })
-  return (
-    <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={isDragging ? 'relative z-10 rounded-lg bg-background opacity-90 shadow-lg' : undefined}
-    >
-      {children({ handleProps: { ...attributes, ...listeners, ref: setActivatorNodeRef } })}
-    </div>
-  )
-}
-
 export function PageEditor() {
   const { locale } = useLocale()
   const copy = LABELS[locale]
@@ -385,13 +359,15 @@ export function PageEditor() {
   /* Dans le tiroir Structure (mobile), les réglages du bloc s'ouvrent en
      accordéon SOUS le bloc touché : pas d'aller-retour entre deux tiroirs. */
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  /* Historique d'annulation. Deux piles d'états de mise en page : `commit()`
-     étant l'entonnoir unique de TOUTE modification (ajout, suppression,
-     réglage, réordonnancement), il suffit d'y empiler l'état précédent pour
-     que chaque geste devienne réversible. Plafonné à 50 pas : au-delà,
-     personne ne remonte, et la mémoire n'a pas à grandir sans fin. */
-  const [past, setPast] = useState<Block[][]>([])
-  const [future, setFuture] = useState<Block[][]>([])
+  const session = useEditorSession((state) => business ? state.sessions[business.id] : undefined)
+  const ensureSession = useEditorSession((state) => state.ensure)
+  const commitSession = useEditorSession((state) => state.commit)
+  const undoSession = useEditorSession((state) => state.undo)
+  const redoSession = useEditorSession((state) => state.redo)
+  const markSaved = useEditorSession((state) => state.markSaved)
+  const past = session?.past ?? []
+  const future = session?.future ?? []
+  const dirty = session?.dirty ?? false
 
   /* Glisser-déposer de la liste de blocs : la souris exige 6 px de mouvement
      avant de saisir (un clic reste un clic), le doigt 200 ms d'appui (un
@@ -426,6 +402,10 @@ export function PageEditor() {
   }, [addOpen, mobilePanel, setDockActivePanel])
 
   useEffect(() => {
+    if (business) ensureSession(business.id)
+  }, [business, ensureSession])
+
+  useEffect(() => {
     const media = window.matchMedia('(max-width: 1023px)')
     setPreviewDevice(media.matches ? 'mobile' : 'desktop')
   }, [])
@@ -452,6 +432,18 @@ export function PageEditor() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  useEffect(() => {
+    if (!dirty || !business) return
+    const saveTimer = window.setTimeout(() => markSaved(business.id), 900)
+    const guard = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+    }
+    window.addEventListener('beforeunload', guard)
+    return () => {
+      window.clearTimeout(saveTimer)
+      window.removeEventListener('beforeunload', guard)
+    }
+  }, [business, dirty, markSaved])
 
   const blocks = page?.layout_json ?? []
   const selected = blocks.find((block) => block.id === selectedId) ?? null
@@ -463,13 +455,9 @@ export function PageEditor() {
   if (!business || !page) return null
 
 
-  function commit(next: Block[]) {
-    /* L'état AVANT modification part sur la pile d'annulation, et la pile de
-       rétablissement se vide : une nouvelle branche efface l'ancien futur,
-       comme dans tout éditeur. */
-    setPast((stack) => [...stack.slice(-49), blocks])
-    setFuture([])
-    updateLayout(business!.id, next)
+  function commit(next: Block[], group?: string) {
+    commitSession(business.id, blocks, group)
+    updateLayout(business.id, next)
   }
 
   /* Restaure un état sans l'empiler à son tour : on déplace entre les deux
@@ -484,24 +472,19 @@ export function PageEditor() {
   }
 
   function undo() {
-    if (past.length === 0) return
-    const previous = past[past.length - 1]
-    setPast((stack) => stack.slice(0, -1))
-    setFuture((stack) => [blocks, ...stack])
-    restore(previous)
+    const previous = undoSession(business.id, blocks)
+    if (previous) restore(previous)
   }
 
   function redo() {
-    if (future.length === 0) return
-    const [next, ...rest] = future
-    setFuture(rest)
-    setPast((stack) => [...stack, blocks])
-    restore(next)
+    const next = redoSession(business.id, blocks)
+    if (next) restore(next)
   }
 
   function patchSelected(patch: Partial<Block>) {
     if (!selected) return
-    commit(updateEditorBlock(blocks, selected.id, patch))
+    const field = Object.keys(patch).sort().join(',')
+    commit(updateEditorBlock(blocks, selected.id, patch), `${selected.id}:${field}`)
   }
 
   function toggleHidden(id: string) {
@@ -682,7 +665,10 @@ export function PageEditor() {
                               businessId={business.id}
                               products={products}
                               copy={copy}
-                              onChange={(patch) => commit(updateEditorBlock(blocks, block.id, patch))}
+                              onChange={(patch) => {
+                        const field = Object.keys(patch).sort().join(',')
+                        commit(updateEditorBlock(blocks, block.id, patch), `${block.id}:${field}`)
+                      }}
                             />
                             <Button
                               variant="ghost"
@@ -748,44 +734,17 @@ export function PageEditor() {
             divergent. */}
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{copy.title}</h1>
-          <div className="flex shrink-0 items-center gap-2">
-            {/* Annuler / Rétablir. Un builder sans marche arrière rend chaque
-                suppression définitive : c'est le défaut le plus cité en test
-                utilisateur. Désactivés quand la pile est vide, pour que l'état
-                de l'historique soit lisible sans cliquer. */}
-            <div className="flex items-center rounded-lg border border-border">
-              <button
-                type="button"
-                onClick={undo}
-                disabled={past.length === 0}
-                aria-label={copy.undo}
-                title={`${copy.undo} (Ctrl+Z)`}
-                className="flex size-9 items-center justify-center rounded-l-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-              >
-                <Undo2 className="size-4" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={redo}
-                disabled={future.length === 0}
-                aria-label={copy.redo}
-                title={`${copy.redo} (Ctrl+Shift+Z)`}
-                className="flex size-9 items-center justify-center rounded-r-lg border-l border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-              >
-                <Redo2 className="size-4" aria-hidden="true" />
-              </button>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => window.open(`/r/${business.slug}`, '_blank', 'noopener,noreferrer')}
-            >
-              <Eye data-icon="inline-start" />
-              {/* Sous 640 px le libellé disputerait sa place au titre : l'icône
-                  seule suffit, le nom restant lisible par les lecteurs d'écran. */}
-              <span className="hidden sm:inline">{copy.publicPage}</span>
-              <span className="sr-only sm:hidden">{copy.publicPage}</span>
-            </Button>
-          </div>
+          <EditorToolbar
+            dirty={dirty}
+            canUndo={past.length > 0}
+            canRedo={future.length > 0}
+            undoLabel={copy.undo}
+            redoLabel={copy.redo}
+            publicPageLabel={copy.publicPage}
+            publicPageUrl={`/r/${business.slug}`}
+            onUndo={undo}
+            onRedo={redo}
+          />
         </div>
         <p className="text-sm text-muted-foreground">{copy.description}</p>
 
