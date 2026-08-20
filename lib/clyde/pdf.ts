@@ -90,9 +90,10 @@ function pdfText(value: string): string {
   for (const [pattern, replacement] of PDF_REPLACEMENTS) {
     out = out.replace(pattern, replacement)
   }
-  /* Dernier filet : ce qui resterait hors du jeu Latin-1 est écarté plutôt
-     que de compromettre le rendu de toute la ligne. */
-  return out.replace(/[^\u0000-\u00ff]/g, '')
+  /* Le document officiel embarque désormais ses polices Unicode. Ne jamais
+     supprimer silencieusement les lettres d'un nom : la normalisation NFC
+     conserve toute écriture et réunit seulement les accents décomposés. */
+  return out.normalize('NFC')
 }
 
 /* Convertit un hex en triplet RVB pour jsPDF, qui ne lit pas les chaînes. */
@@ -136,7 +137,7 @@ export interface EngineerCardLabels {
  * Le QR arrive en PNG depuis un canvas : la génération vit côté composant,
  * cette fonction ne fait que composer le document.
  */
-export function buildEngineerCard(input: {
+export interface EngineerArtifactInput {
   engineerName: string
   businessName: string
   /** Poste dans l'usine — « Ingénieur Culinaire ». */
@@ -149,12 +150,90 @@ export function buildEngineerCard(input: {
   url: string
   qrDataUrl: string
   brand: string
+  /** Couleur secondaire liée à la famille de métier. */
+  tradeColor?: string
+  fonts?: PdfFonts
   labels: EngineerCardLabels
-}): jsPDF {
-  const W = 105
-  const H = 148
-  const M = 10
-  const doc = new jsPDF({ unit: 'mm', format: [W, H] })
+}
+
+/**
+ * Carte d'Ingénieur au véritable format bancaire, recto-verso.
+ * Elle se glisse dans un portefeuille ; le verso réserve toute la place utile
+ * au QR et aux informations de contrôle.
+ */
+export function buildEngineerCard(input: EngineerArtifactInput): jsPDF {
+  const W = 85.6
+  const H = 54
+  const doc = new jsPDF({ unit: 'mm', format: [W, H], orientation: 'landscape' })
+  registerFactoryFonts(doc, input.fonts)
+  const [br, bg, bb] = rgb(input.brand)
+  const [tr, tg, tb] = rgb(input.tradeColor ?? input.brand)
+  const mono = input.fonts ? 'plexmono' : 'courier'
+  const initials = pdfText(input.engineerName)
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+
+  /* Recto : portrait symbolique, identité et bande métier. */
+  doc.setFillColor(249, 248, 245)
+  doc.rect(0, 0, W, H, 'F')
+  doc.setFillColor(tr, tg, tb)
+  doc.rect(0, 0, 5, H, 'F')
+  doc.setFillColor(br, bg, bb)
+  doc.circle(18, 22, 10, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(13)
+  doc.text(initials || 'C', 18, 24, { align: 'center' })
+  doc.setTextColor(INK)
+  doc.setFontSize(8)
+  doc.text('CLYDE', 32, 10)
+  doc.setFontSize(12)
+  const name = (doc.splitTextToSize(pdfText(input.engineerName), 48) as string[]).slice(0, 2)
+  doc.text(name, 32, 19)
+  doc.setFontSize(7)
+  doc.setTextColor(MUTED)
+  doc.text(pdfText(input.post), 32, 31, { maxWidth: 48 })
+  doc.setFont(mono, 'bold')
+  doc.setFontSize(6.7)
+  doc.setTextColor(INK)
+  doc.text(pdfText(input.engineerId), 8, 47)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(6)
+  doc.setTextColor(MUTED)
+  doc.text(pdfText(input.businessName), W - 5, 47, { align: 'right', maxWidth: 38 })
+
+  /* Verso : QR de contrôle, titre et date d'entrée. */
+  doc.addPage([W, H], 'landscape')
+  doc.setFillColor(249, 248, 245)
+  doc.rect(0, 0, W, H, 'F')
+  doc.setFillColor(br, bg, bb)
+  doc.rect(0, 0, W, 6, 'F')
+  doc.addImage(input.qrDataUrl, 'PNG', 6, 10, 36, 36)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8.5)
+  doc.setTextColor(INK)
+  doc.text(pdfText(input.revelationTitle), 48, 17, { maxWidth: 31 })
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(6.5)
+  doc.setTextColor(MUTED)
+  doc.text(pdfText(input.labels.qrHint), 48, 27, { maxWidth: 31 })
+  doc.setFont(mono, 'normal')
+  doc.setFontSize(5.5)
+  doc.text(pdfText(input.url), 48, 40, { maxWidth: 31 })
+  doc.setFont('helvetica', 'normal')
+  doc.text(pdfText(input.since), W - 6, 49, { align: 'right' })
+  return doc
+}
+
+/** Affichette A5 de comptoir : le même statut, mais un QR lisible à distance. */
+export function buildEngineerPoster(input: EngineerArtifactInput): jsPDF {
+  const W = 148
+  const H = 210
+  const M = 14
+  const doc = new jsPDF({ unit: 'mm', format: 'a5' })
   const { labels } = input
   const [br, bg, bb] = rgb(input.brand)
 
@@ -221,7 +300,7 @@ export function buildEngineerCard(input: {
   const FOOTER_LEAD = 2.6
   const footerY = H - 7 - (footerLines.length - 1) * FOOTER_LEAD
 
-  const qrSize = 32
+  const qrSize = 60
   /* Haut de la zone réservée : le QR et la mention en dessous. Le bloc
      d'identité ne doit jamais franchir cette ligne. */
   const qrY = footerY - 6 - qrSize
@@ -386,11 +465,15 @@ export function buildFoundationCertificate(input: {
   verificationUrl: string
   qrDataUrl: string
   brand: string
+  fonts?: PdfFonts
   labels: CertificateLabels
 }): jsPDF {
   const W = 297
   const H = 210
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' })
+  registerFactoryFonts(doc, input.fonts)
+  const ceremonyFont = input.fonts ? 'cormorant' : 'times'
+  const identityFont = input.fonts ? 'plexmono' : 'courier'
   const { labels } = input
   const [br, bg, bb] = rgb(input.brand)
 
@@ -454,8 +537,8 @@ export function buildFoundationCertificate(input: {
     charSpace: 1.2,
   })
 
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(24)
+  doc.setFont(ceremonyFont, 'bold')
+  doc.setFontSize(29)
   doc.setTextColor(INK)
   doc.text(pdfText(labels.document), W / 2, 68, { align: 'center' })
 
@@ -466,8 +549,8 @@ export function buildFoundationCertificate(input: {
 
   /* Le nom du commerce est le sujet du document : il occupe la place la plus
      grande, et se réduit plutôt que de déborder du cadre. */
-  let size = 40
-  doc.setFont('helvetica', 'bold')
+  let size = 42
+  doc.setFont(ceremonyFont, 'bold')
   doc.setTextColor(INK)
   const name = pdfText(input.businessName)
   doc.setFontSize(size)
@@ -502,7 +585,7 @@ export function buildFoundationCertificate(input: {
     doc.setFontSize(6.5)
     doc.setTextColor(MUTED)
     doc.text(pdfText(label.toUpperCase()), x, foot, { charSpace: 0.6 })
-    doc.setFont(mono ? 'courier' : 'helvetica', 'bold')
+    doc.setFont(mono ? identityFont : 'helvetica', 'bold')
     doc.setFontSize(10)
     doc.setTextColor(INK)
     doc.text(pdfText(value), x, foot + 6)
@@ -596,6 +679,7 @@ export function buildQrSheet(input: {
   scanHint: string
   /** Pied de page : rappel de l'adresse publique de la boutique. */
   footer: string
+  brand?: string
 }): jsPDF {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const columns = 3
@@ -606,6 +690,7 @@ export function buildQrSheet(input: {
   const usableHeight = PAGE.height - MARGIN * 2
   const cellWidth = usableWidth / columns
   const cellHeight = usableHeight / rows
+  const [br, bg, bb] = rgb(input.brand ?? '#e05e10')
 
   input.cards.forEach((card, index) => {
     const slot = index % perPage
@@ -622,6 +707,10 @@ export function buildQrSheet(input: {
     doc.setLineWidth(0.2)
     doc.rect(x, y, cellWidth, cellHeight)
     doc.setLineDashPattern([], 0)
+    /* Bande d'identité et cadre de scan : l'étiquette explique immédiatement
+       qu'elle appartient au commerce, même séparée de la planche. */
+    doc.setFillColor(br, bg, bb)
+    doc.rect(x, y, cellWidth, 3, 'F')
 
     const padding = 5
     const innerWidth = cellWidth - padding * 2
@@ -666,14 +755,21 @@ export function buildQrSheet(input: {
 
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7)
+    doc.setTextColor(br, bg, bb)
+    doc.text('CLYDE · WHATSAPP', x + cellWidth / 2, cursor, { align: 'center' })
+    cursor += 3.5
     doc.setTextColor(MUTED)
     const hint = doc.splitTextToSize(
       pdfText(input.scanHint),
       innerWidth,
     ) as string[]
-    /* Deux lignes au maximum : au-delà, la consigne dépasse de la cellule et
-       chevauche l'étiquette suivante. */
-    doc.text(hint.slice(0, 2), x + cellWidth / 2, cursor, { align: 'center' })
+    /* Deux lignes au maximum. Si la formulation est plus longue, une ellipse
+       explicite signale la coupe au lieu d'imprimer une phrase amputée. */
+    const visibleHint = hint.slice(0, 2)
+    if (hint.length > 2 && visibleHint[1]) {
+      visibleHint[1] = `${visibleHint[1].replace(/[.,;:!?]?$/, '')}...`
+    }
+    doc.text(visibleHint, x + cellWidth / 2, cursor, { align: 'center' })
   })
 
   /* Pied de page sur chaque planche : sans lui, une étiquette illisible ou un

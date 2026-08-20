@@ -365,8 +365,8 @@ function PrintSheetBanner({
               key={location.id}
               value={publicUrl(slug, location.id)}
               size={512}
-              level="M"
-              marginSize={1}
+              level="H"
+              marginSize={4}
             />
           ))}
         </div>
@@ -528,7 +528,7 @@ type BarcodeDetectorCtor = new (options?: { formats?: string[] }) => BarcodeDete
 /**
  * Contrôle d'une étiquette en place.
  *
- * Un QR collé sur la mauvaise table envoie les commandes au mauvais endroit,
+ * Un QR coll�� sur la mauvaise table envoie les commandes au mauvais endroit,
  * et l'erreur ne se voit qu'au moment où un plat part à côté. Vérifier prend
  * deux secondes avec la caméra ; sans cet écran, il faut lire une URL à la
  * loupe et comparer un identifiant.
@@ -891,7 +891,9 @@ function QrDialog({
             {categoryLabel ?? d.order}
           </p>
           <p className="text-lg font-semibold leading-tight">{businessName}</p>
-          <QRCodeCanvas value={url} size={176} level="M" marginSize={1} />
+          <div className="rounded-xl border-4 border-brand bg-background p-2">
+            <QRCodeCanvas value={url} size={176} level="H" marginSize={4} />
+          </div>
           <p className="font-medium">{location.label}</p>
           <p className="max-w-[16rem] text-xs leading-relaxed text-muted-foreground">
             {d.scanHint}

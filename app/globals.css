@@ -83,6 +83,9 @@
   --muted-foreground: oklch(0.505 0.012 65);
 
   --brand: oklch(0.672 0.196 39);
+  /* Équivalent sRGB lu par jsPDF : une seule source CSS, aucun hex dupliqué
+     dans les composants qui génèrent les papiers officiels. */
+  --brand-pdf: #e05e10;
   --brand-soft: oklch(0.815 0.106 46);
   --brand-foreground: oklch(0.99 0.003 85);
 

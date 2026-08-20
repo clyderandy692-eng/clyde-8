@@ -10,12 +10,9 @@ import { useClyde } from '@/lib/clyde/store'
 import { engineerId, engineerPost } from '@/lib/clyde/factory'
 import { bi, findCourseById } from '@/lib/clyde/formation'
 import { revelationTitle } from '@/lib/clyde/revelation'
+import { CATEGORY_MAP } from '@/lib/clyde/taxonomy'
 import type { Business } from '@/lib/clyde/types'
 import { cn } from '@/lib/utils'
-
-/* Couleur de marque de l'Usine, en hex : les PDF ne lisent pas les jetons
-   CSS. Elle doit rester alignée sur `--brand` dans globals.css. */
-const BRAND_HEX = '#E05E10'
 
 /**
  * Les papiers d'ingénieur — Carte et Certificat de Fondation.
@@ -51,11 +48,21 @@ export function EngineerPapers({
     (s) => s.pages.find((p) => p.business_id === business.id)?.published ?? false,
   )
   const stage = useRef<HTMLDivElement>(null)
-  const [busy, setBusy] = useState<'card' | 'certificate' | null>(null)
+  type PaperKind = 'card' | 'poster' | 'certificate'
+  const [busy, setBusy] = useState<PaperKind | null>(null)
+  const [preview, setPreview] = useState<PaperKind | null>(null)
   const a = t.factory.artifacts
 
   const owner = users.find((u) => u.id === business.owner_id)
   const post = engineerPost(business.category, locale)
+  const family = CATEGORY_MAP[business.category].family
+  /* Trois bandes collectionnables : hospitalité, soin/création, commerce/service. */
+  const tradeColor =
+    family === 'restauration' || family === 'hebergement'
+      ? '#1F6F78'
+      : family === 'beaute' || family === 'evenementiel'
+        ? '#9A4F67'
+        : '#566B3D'
   const matricule = engineerId(business.id)
   const dateLocale = locale === 'en' ? 'en-GB' : 'fr-FR'
   const since = new Date(business.created_at).toLocaleDateString(dateLocale, {
@@ -90,7 +97,17 @@ export function EngineerPapers({
     return `${origin}/verifier/${encodeURIComponent(matricule)}`
   }
 
-  const download = async (kind: 'card' | 'certificate') => {
+  const readBase64 = async (url: string) => {
+    const buffer = await fetch(url).then((response) => response.arrayBuffer())
+    const bytes = new Uint8Array(buffer)
+    let binary = ''
+    for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000))
+    }
+    return btoa(binary)
+  }
+
+  const download = async (kind: PaperKind) => {
     setBusy(kind)
     try {
       /* Imports différés : jspdf pèse quelques centaines de kilo-octets, il
@@ -100,35 +117,46 @@ export function EngineerPapers({
         import('@/lib/clyde/export'),
       ])
       const url = publicUrl()
+      const brand = getComputedStyle(document.documentElement)
+        .getPropertyValue('--brand-pdf')
+        .trim()
+      const fonts = {
+        display: await readBase64('/fonts/cormorant-garamond.ttf'),
+        mono: await readBase64('/fonts/ibm-plex-mono.ttf'),
+      }
+      const cardLabels = {
+        institution: t.factory.cardLabels.institution,
+        document: t.factory.cardLabels.document,
+        postLabel: t.factory.cardLabels.post,
+        titleLabel: t.factory.cardLabels.title,
+        idLabel: t.factory.cardLabels.id,
+        sinceLabel: t.factory.cardLabels.since,
+        qrHint: t.factory.cardLabels.qrHint,
+        footer: t.factory.cardLabels.footer,
+      }
+      const artifactInput = {
+        engineerName: owner?.name ?? business.name,
+        businessName: business.name,
+        post,
+        revelationTitle: revelationTitle(business.category, locale),
+        engineerId: matricule,
+        since,
+        url,
+        qrDataUrl: (
+          stage.current?.querySelector('[data-qr="card"] canvas') as HTMLCanvasElement
+        ).toDataURL('image/png'),
+        brand,
+        tradeColor,
+        fonts,
+        labels: cardLabels,
+      }
 
       const doc =
         kind === 'card'
-          ? pdf.buildEngineerCard({
-              engineerName: owner?.name ?? business.name,
-              businessName: business.name,
-              post,
-              revelationTitle: revelationTitle(business.category, locale),
-              engineerId: matricule,
-              since,
-              url,
-              /* Le canvas hors écran est déjà monté : sans image, la carte
-                 perdrait sa seule fonction utile en boutique. */
-              qrDataUrl: (
-                stage.current?.querySelector('[data-qr="card"] canvas') as HTMLCanvasElement
-              ).toDataURL('image/png'),
-              brand: BRAND_HEX,
-              labels: {
-                institution: t.factory.cardLabels.institution,
-                document: t.factory.cardLabels.document,
-                postLabel: t.factory.cardLabels.post,
-                titleLabel: t.factory.cardLabels.title,
-                idLabel: t.factory.cardLabels.id,
-                sinceLabel: t.factory.cardLabels.since,
-                qrHint: t.factory.cardLabels.qrHint,
-                footer: t.factory.cardLabels.footer,
-              },
-            })
-          : pdf.buildFoundationCertificate({
+          ? pdf.buildEngineerCard(artifactInput)
+          : kind === 'poster'
+            ? pdf.buildEngineerPoster(artifactInput)
+            : pdf.buildFoundationCertificate({
               businessName: business.name,
               engineerName: owner?.name ?? business.name,
               post,
@@ -139,7 +167,8 @@ export function EngineerPapers({
               qrDataUrl: (
                 stage.current?.querySelector('[data-qr="certificate"] canvas') as HTMLCanvasElement
               ).toDataURL('image/png'),
-              brand: BRAND_HEX,
+              brand,
+              fonts,
               labels: {
                 institution: t.factory.certificateLabels.institution,
                 document: t.factory.certificateLabels.document,
@@ -159,7 +188,11 @@ export function EngineerPapers({
         doc.output('blob'),
         `${exportUtils.safeFilename(
           business.slug,
-          kind === 'card' ? 'carte-ingenieur' : 'certificat-fondation',
+          kind === 'card'
+            ? 'carte-ingenieur'
+            : kind === 'poster'
+              ? 'affichette-qr'
+              : 'certificat-fondation',
         )}.pdf`,
       )
       /* La carte porte le QR code de la page : la télécharger vaut l'étape
@@ -212,7 +245,7 @@ export function EngineerPapers({
       <div
         className={cn(
           'grid gap-2',
-          variant === 'panel' ? 'sm:grid-cols-2' : 'sm:grid-cols-2',
+          'sm:grid-cols-3',
         )}
       >
         <div className="flex flex-col gap-2">
@@ -220,7 +253,7 @@ export function EngineerPapers({
             variant={variant === 'ritual' ? 'default' : 'outline'}
             className="justify-start"
             disabled={busy !== null}
-            onClick={() => download('card')}
+            onClick={() => setPreview('card')}
           >
             <IdCard className="size-4" aria-hidden="true" />
             <span className="min-w-0 truncate">{a.card}</span>
@@ -238,7 +271,27 @@ export function EngineerPapers({
             variant="outline"
             className="justify-start"
             disabled={busy !== null}
-            onClick={() => download('certificate')}
+            onClick={() => setPreview('poster')}
+          >
+            <ScrollText className="size-4" aria-hidden="true" />
+            <span className="min-w-0 truncate">
+              {locale === 'fr' ? 'Affiche de comptoir' : 'Counter poster'}
+            </span>
+            <Download className="ml-auto size-4 shrink-0" aria-hidden="true" />
+          </Button>
+          {variant === 'panel' && (
+            <p className="text-[13px] leading-relaxed text-muted-foreground">
+              {locale === 'fr' ? 'Format A5 et QR géant, lisible depuis une table.' : 'A5 format with a large QR, readable from a table.'}
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Button
+            variant="outline"
+            className="justify-start"
+            disabled={busy !== null}
+            onClick={() => setPreview('certificate')}
           >
             <ScrollText className="size-4" aria-hidden="true" />
             <span className="min-w-0 truncate">{a.certificate}</span>
@@ -251,6 +304,68 @@ export function EngineerPapers({
           )}
         </div>
       </div>
+      )}
+
+      {preview && (
+        <div className="mt-4 rounded-xl border border-border bg-muted/40 p-4">
+          <div
+            className={cn(
+              'mx-auto overflow-hidden border border-border bg-card shadow-sm',
+              preview === 'card'
+                ? 'aspect-[85/54] max-w-sm rounded-xl'
+                : preview === 'poster'
+                  ? 'aspect-[148/210] max-w-xs'
+                  : 'aspect-[297/210] max-w-xl',
+            )}
+          >
+            {preview === 'card' ? (
+              <div className="flex h-full flex-col">
+                <div className="flex items-center justify-between bg-brand px-4 py-3 text-brand-foreground">
+                  <strong className="tracking-wide">CLYDE</strong>
+                  <span className="text-[10px] uppercase tracking-widest">{a.card}</span>
+                </div>
+                <div className="flex min-h-0 flex-1 items-center gap-4 p-4">
+                  <div className="grid size-16 shrink-0 place-items-center rounded-md bg-muted text-xl font-semibold text-muted-foreground">
+                    {(owner?.name ?? business.name).slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{owner?.name ?? business.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{post}</p>
+                    <p className="mt-2 font-mono text-[10px] text-muted-foreground">{matricule}</p>
+                  </div>
+                  <div className="ml-auto size-16 shrink-0 bg-background p-1">
+                    <QRCodeCanvas value={publicUrl()} size={120} level="H" marginSize={4} />
+                  </div>
+                </div>
+              </div>
+            ) : preview === 'poster' ? (
+              <div className="flex h-full flex-col items-center justify-center gap-3 border-t-8 border-brand p-5 text-center">
+                <p className="text-xs font-semibold uppercase tracking-widest">{business.name}</p>
+                <div className="w-3/5 bg-background p-2">
+                  <QRCodeCanvas value={publicUrl()} size={240} level="H" marginSize={4} />
+                </div>
+                <p className="text-sm font-semibold">{t.factory.cardLabels.qrHint}</p>
+                <p className="font-mono text-[9px] text-muted-foreground">{publicUrl()}</p>
+              </div>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center border-[6px] border-brand/80 p-6 text-center">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-brand">CLYDE · {t.factory.certificateLabels.institution}</p>
+                <p className="mt-3 font-serif text-2xl font-semibold">{t.factory.certificateLabels.document}</p>
+                <p className="mt-3 font-serif text-xl font-semibold">{business.name}</p>
+                <p className="mt-2 font-mono text-[9px] text-muted-foreground">{matricule}</p>
+              </div>
+            )}
+          </div>
+          <div className="mt-4 flex flex-wrap justify-end gap-2">
+            <Button variant="ghost" onClick={() => setPreview(null)}>
+              {locale === 'fr' ? 'Fermer' : 'Close'}
+            </Button>
+            <Button disabled={busy !== null} onClick={() => download(preview)}>
+              <Download className="size-4" aria-hidden="true" />
+              {busy ? (locale === 'fr' ? 'Préparation…' : 'Preparing…') : (locale === 'fr' ? 'Télécharger ce PDF' : 'Download this PDF')}
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Le registre des formations. Affiché seulement en mode panneau et
