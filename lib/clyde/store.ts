@@ -265,6 +265,7 @@ interface ClydeState {
   /* --- Activation --- */
   /** Coche ou décoche une étape de la checklist d'activation. */
   toggleActivationCheck: (businessId: string, step: string) => void
+  markActivationDone: (businessId: string, step: string) => void
 
   /* --- Abonnement CLYDE --- */
   /** Le plan appartient au compte : c'est l'identifiant du propriétaire. */
@@ -1192,6 +1193,22 @@ export const useClyde = create<ClydeState>()(
           ? s.activationChecks.filter((k) => k !== key)
           : [...s.activationChecks, key],
       }
+    }),
+
+  /*
+   * Constat d'une action réellement observée (un PDF téléchargé, un lien
+   * ouvert), par opposition à la case qu'on cochait à la main.
+   *
+   * Séparé de `toggleActivationCheck` parce qu'un constat ne s'inverse pas :
+   * plusieurs chemins mènent au même fait — la planche QR et la carte
+   * d'ingénieur contiennent tous deux le code — et un simple bascule aurait
+   * décoché l'étape au second téléchargement.
+   */
+  markActivationDone: (businessId, step) =>
+    set((s) => {
+      const key = `${businessId}:${step}`
+      if (s.activationChecks.includes(key)) return {}
+      return { activationChecks: [...s.activationChecks, key] }
     }),
 
   setPlan: (ownerId, plan) =>

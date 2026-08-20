@@ -193,7 +193,7 @@ const FR = {
   },
 
   /* La couche narrative du monde CLYDE : une section dédiée, pas une voix
-     diffusée partout. Le mouvement central est la rév����lation — flou vers
+     diffusée partout. Le mouvement central est la rév�����lation — flou vers
      net, invisible vers vu. Le reste de la page garde son ton direct. */
   revelation: {
     kicker: 'La Révélation',
@@ -1297,6 +1297,9 @@ const FR = {
         markDone: 'Marquer comme fait',
         undo: 'Annuler',
         allDone: 'Vos premiers pas sont terminés — votre page est prête à vendre.',
+        doneTitle: 'Votre page est prête à travailler',
+        doneHint: 'Prochaine action : consultez les visites et améliorez ce qui attire le plus vos clients.',
+        doneAction: 'Voir mes performances',
       },
     },
     orders: {
@@ -1453,7 +1456,7 @@ const FR = {
       /* La condition est dite en clair : c'est la publication qui récompense,
          pas l'inscription. Un parrain qui l'ignore croit à une panne. */
       conditionNote:
-        'Le bonus tombe à la publication de sa page, jamais à la simple inscription.',
+        'Le bonus tombe �� la publication de sa page, jamais à la simple inscription.',
 
       statsTitle: 'Vos parrainages',
       statInvited: 'Invités',
@@ -1500,6 +1503,12 @@ const FR = {
       viewMyPage: 'Voir ma page',
       bestTitle: 'Ce qui se vend le mieux',
       bestBody: 'Vos entrées les plus commandées sur la période.',
+      viewedTitle: 'Les plus regardés',
+      viewedReport: 'Rapport CSV',
+      viewedBody: (word: string) =>
+        `Vos produits classés par vues : très regardé mais peu commandé signale une photo ou un prix à revoir. Le rapport CSV contient tout ${word}.`,
+      viewedRow: (views: number, orders: number, rate: string) =>
+        `${views} vues · ${orders} cmd · ${rate} %`,
       noOrders: 'Aucune commande sur la période.',
       hesitationTitle: 'Angles morts détectés',
       hesitationBody:
@@ -2903,6 +2912,9 @@ const EN: Dict = {
         markDone: 'Mark as done',
         undo: 'Undo',
         allDone: 'Your first steps are done — your page is ready to sell.',
+        doneTitle: 'Your page is ready to work',
+        doneHint: 'Next up: check your visits and double down on what attracts customers most.',
+        doneAction: 'View my performance',
       },
     },
     orders: {
@@ -3090,6 +3102,12 @@ const EN: Dict = {
       viewMyPage: 'View my page',
       bestTitle: 'What sells best',
       bestBody: 'Your most ordered entries in this period.',
+      viewedTitle: 'Most viewed',
+      viewedReport: 'CSV report',
+      viewedBody: (word: string) =>
+        `Your products ranked by views: heavily viewed but rarely ordered points to a photo or a price worth revisiting. The CSV report covers your whole ${word}.`,
+      viewedRow: (views: number, orders: number, rate: string) =>
+        `${views} views · ${orders} orders · ${rate}%`,
       noOrders: 'No orders in this period.',
       hesitationTitle: 'Blind spots detected',
       hesitationBody:

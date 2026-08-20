@@ -407,16 +407,14 @@ export function DashboardAnalytics() {
             les deux classements se comparent d'un regard. */}
         <section className="rounded-2xl border border-border bg-background p-5">
           <div className="flex items-start justify-between gap-3 pb-1">
-            <h2 className="text-base font-semibold">Les plus regardés</h2>
+            <h2 className="text-base font-semibold">{d.viewedTitle}</h2>
             <Button variant="outline" size="sm" onClick={downloadReport} disabled={viewed.length === 0}>
               <Download className="size-4" aria-hidden="true" />
-              Rapport CSV
+              {d.viewedReport}
             </Button>
           </div>
           <p className="pb-4 text-sm text-muted-foreground">
-            Vos produits classés par vues : très regardé mais peu commandé
-            signale une photo ou un prix à revoir. Le rapport CSV contient tout
-            le catalogue.
+            {d.viewedBody(catalogWord.toLowerCase())}
           </p>
 
           {viewedTop.length === 0 ? (
@@ -439,7 +437,7 @@ export function DashboardAnalytics() {
                           {row.product.name}
                         </p>
                         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                          {row.views} vues · {row.orders} cmd · {rate.toFixed(1)} %
+                          {d.viewedRow(row.views, row.orders, rate.toFixed(1))}
                         </span>
                       </div>
                       <div

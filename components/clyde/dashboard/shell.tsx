@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { Backdrop, type BackdropPattern } from '@/components/clyde/backdrop'
 import { ClydeWordmark } from '@/components/clyde/mark'
+import { DOCK_SAFE_AREA } from '@/components/clyde/mobile-dock'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useLocale, useT } from '@/lib/clyde/i18n'
@@ -473,7 +474,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* `relative z-10` : le fond est peint au-dessus du fond du conteneur,
           le contenu doit donc repasser devant. */}
-      <main className="relative z-10 pb-24 lg:pb-0 lg:pl-64">
+      <main className={cn('relative z-10 lg:pl-64', DOCK_SAFE_AREA)}>
         <div
           className={cn(
             'mx-auto px-4 py-8 md:px-8 md:py-10',

@@ -93,3 +93,37 @@ export const useEditorSession = create<EditorSessionState>((set, get) => ({
     },
   })),
 }))
+
+/** Clé sous laquelle le registre CLYDE écrit son instantané. */
+const SNAPSHOT_KEY = 'clyde-data'
+
+/**
+ * La mise en page est-elle réellement dans l'instantané enregistré ?
+ *
+ * Le constructeur affichait « Enregistré » au bout d'un délai fixe, sans rien
+ * vérifier : un quota de stockage dépassé ou une écriture refusée en navigation
+ * privée laissait le commerçant croire que son travail était à l'abri. On relit
+ * donc ce qui est réellement sur le disque et on le compare à l'écran.
+ *
+ * La comparaison passe par `JSON.stringify` : c'est exactement la forme que
+ * prend la mise en page une fois enregistrée, donc la seule qui répond à la
+ * question posée — deux objets égaux au sens du sérialiseur sont indiscernables
+ * après un rechargement.
+ */
+export function layoutPersisted(businessId: string, blocks: Block[]): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    const raw = window.localStorage.getItem(SNAPSHOT_KEY)
+    if (!raw) return false
+    const snapshot = JSON.parse(raw) as {
+      state?: { pages?: Array<{ business_id: string; layout_json: Block[] }> }
+    }
+    const page = snapshot.state?.pages?.find((p) => p.business_id === businessId)
+    if (!page) return false
+    return JSON.stringify(page.layout_json) === JSON.stringify(blocks)
+  } catch {
+    /* Instantané illisible ou stockage inaccessible : dans le doute, on ne
+       promet rien au commerçant. */
+    return false
+  }
+}

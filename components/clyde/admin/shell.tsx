@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Flag, GraduationCap, LayoutDashboard, Package, Users } from 'lucide-react'
-import { MobileDock, type MobileDockItem } from '@/components/clyde/mobile-dock'
+import { DOCK_SAFE_AREA, MobileDock, type MobileDockItem } from '@/components/clyde/mobile-dock'
 import { useClyde } from '@/lib/clyde/store'
 import { cn } from '@/lib/utils'
 
@@ -36,7 +36,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }))
 
   return (
-    <div className="min-h-dvh bg-secondary/30 pb-24 lg:pb-0">
+    <div className={cn('min-h-dvh bg-secondary/30', DOCK_SAFE_AREA)}>
       <header className="sticky top-0 z-30 hidden border-b border-border bg-background/95 backdrop-blur lg:block">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-8">
           <Link href="/admin" className="font-mono text-sm font-bold tracking-[0.18em] text-brand uppercase">

@@ -275,8 +275,7 @@ function PrintSheetBanner({
 }) {
   const t = useT()
   const d = t.dashboard.locations
-  const activationChecks = useClyde((s) => s.activationChecks)
-  const toggleActivationCheck = useClyde((s) => s.toggleActivationCheck)
+  const markActivationDone = useClyde((s) => s.markActivationDone)
   const [busy, setBusy] = useState(false)
   /* Conteneur hors écran : les QR pleine résolution y sont rendus le temps de
      l'export, puis retirés. */
@@ -315,10 +314,7 @@ function PrintSheetBanner({
       })
 
       downloadBlob(doc.output('blob'), `${safeFilename('qr', slug)}.pdf`)
-      const activationKey = `${businessId}:qr_downloaded`
-      if (!activationChecks.includes(activationKey)) {
-        toggleActivationCheck(businessId, 'qr_downloaded')
-      }
+      markActivationDone(businessId, 'qr_downloaded')
       toast.success(d.printSheetDone)
     } catch {
       toast.error(d.printSheetFailed)

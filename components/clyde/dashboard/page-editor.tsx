@@ -59,7 +59,7 @@ import { EditorToolbar } from './editor/editor-toolbar'
 import { SortableBlockRow } from './editor/sortable-block-row'
 import { BLOCK_LIBRARY, BLOCK_META, createBlock } from '@/lib/clyde/blocks'
 import { useEditorDock } from '@/lib/clyde/editor-dock'
-import { useEditorSession } from '@/lib/clyde/editor-session'
+import { layoutPersisted, useEditorSession } from '@/lib/clyde/editor-session'
 import {
   duplicateEditorBlock,
   moveEditorBlock,
@@ -376,7 +376,7 @@ type Copy = (typeof LABELS)[keyof typeof LABELS]
 export function PageEditor() {
   const { locale } = useLocale()
   const copy = LABELS[locale]
-  const { business, page } = useOwnerContext()
+  const { business, page, catalogWord } = useOwnerContext()
   const updateLayout = useClyde((s) => s.updateLayout)
   const updateTheme = useClyde((s) => s.updateTheme)
   const products = useClyde((s) => s.products)
@@ -465,25 +465,43 @@ export function PageEditor() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  useEffect(() => {
-    if (!dirty || !business) return
-    const saveTimer = window.setTimeout(() => markSaved(business.id), 900)
-    const guard = (event: BeforeUnloadEvent) => {
-      event.preventDefault()
-    }
-    window.addEventListener('beforeunload', guard)
-    return () => {
-      window.clearTimeout(saveTimer)
-      window.removeEventListener('beforeunload', guard)
-    }
-  }, [business, dirty, markSaved])
-
   const blocks = page?.layout_json ?? []
   const selected = blocks.find((block) => block.id === selectedId) ?? null
   const availableBlocks = useMemo(
     () => BLOCK_LIBRARY.filter((meta) => !meta.unique || !blocks.some((b) => b.type === meta.type)),
     [blocks],
   )
+
+  /* L'indicateur « Enregistré » ne se déclenche que sur une écriture constatée.
+     On relit l'instantané du navigateur jusqu'à y retrouver la mise en page
+     affichée ; si le stockage refuse (quota atteint, navigation privée), le
+     témoin reste sur « Modifications en cours » — un mensonge rassurant coûte
+     ici une journée de travail. Le garde `beforeunload` accompagne l'attente. */
+  useEffect(() => {
+    if (!dirty || !business) return
+
+    let attempts = 0
+    const probe = window.setInterval(() => {
+      attempts += 1
+      if (layoutPersisted(business.id, blocks)) {
+        markSaved(business.id)
+        window.clearInterval(probe)
+      } else if (attempts >= 12) {
+        /* ~3 s sans écriture visible : on abandonne la vérification et on
+           laisse l'état « non enregistré » visible. */
+        window.clearInterval(probe)
+      }
+    }, 250)
+
+    const guard = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+    }
+    window.addEventListener('beforeunload', guard)
+    return () => {
+      window.clearInterval(probe)
+      window.removeEventListener('beforeunload', guard)
+    }
+  }, [business, blocks, dirty, markSaved])
 
   if (!business || !page) return null
 
@@ -598,7 +616,14 @@ export function PageEditor() {
      ceux qui décident d'une commande : voir, comprendre le prix, contacter. */
   const mine = products.filter((p) => p.business_id === business.id && p.active)
   const checks = [
-    { done: mine.length >= 3, label: locale === 'fr' ? '3 articles au catalogue' : '3 items in the catalogue' },
+    {
+      done: mine.length >= 3,
+      /* Le mot du métier, pas « catalogue » : un hôtel a des chambres. */
+      label:
+        locale === 'fr'
+          ? `3 entrées dans ${catalogWord.toLowerCase()}`
+          : `3 entries in your ${catalogWord.toLowerCase()}`,
+    },
     {
       done: mine.length > 0 && mine.filter((p) => p.media_urls.length > 0).length >= Math.min(3, mine.length),
       label: locale === 'fr' ? 'Une photo par article' : 'A photo on each item',
@@ -613,7 +638,10 @@ export function PageEditor() {
     },
     {
       done: blocks.some((b) => b.type === 'catalogue' && !b.hidden),
-      label: locale === 'fr' ? 'Le catalogue affiché' : 'The catalogue shown',
+      label:
+        locale === 'fr'
+          ? `${catalogWord} affiché sur la page`
+          : `${catalogWord} shown on the page`,
     },
     {
       done: blocks.some((b) => b.type === 'contact' && !b.hidden),
@@ -800,11 +828,11 @@ export function PageEditor() {
     </div>
   )
 
-  /* `pb-28` : le bas de page ne doit dégager que le dock (≈ 5.5rem + son
-     retrait). `pb-40` réservait 160 px pour deux barres empilées — la seconde
-     ayant disparu, cette marge laissait un vide sous le contenu. */
+  /* Aucune réserve de bas de page ici : la coque du tableau de bord la pose
+     déjà via `DOCK_SAFE_AREA`. La redoubler ouvrait un vide sous le contenu, et
+     la maintenir à deux endroits garantissait qu'elles divergent. */
   return (
-    <main className="flex min-h-dvh min-w-0 flex-col gap-6 pb-28 lg:pb-0">
+    <main className="flex min-h-dvh min-w-0 flex-col gap-6">
       {/* Sur téléphone le titre et le bouton partagent la même ligne, et la
           phrase d'explication passe dessous. Empilés, ils poussaient l'aperçu à
           253 px du haut d'un écran de 844 : l'essentiel de l'outil — voir sa

@@ -12,6 +12,16 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
+/**
+ * Réserve de bas de page à laisser sous tout contenu que le dock recouvre.
+ *
+ * Une seule source, parce que la valeur était recopiée à la main dans cinq
+ * fichiers : `pb-24` ici, `pb-28` là, et le dernier bouton d'une liste passait
+ * sous la barre selon l'écran. La classe s'annule au-delà de `lg`, où le dock
+ * disparaît au profit de la barre latérale.
+ */
+export const DOCK_SAFE_AREA = 'pb-28 lg:pb-0'
+
 export type MobileDockItem = {
   key: string
   label: string

@@ -59,6 +59,7 @@ export function DashboardOverview() {
   const setOrderStatus = useClyde((s) => s.setOrderStatus)
   const activationChecks = useClyde((s) => s.activationChecks)
   const toggleActivationCheck = useClyde((s) => s.toggleActivationCheck)
+  const markActivationDone = useClyde((s) => s.markActivationDone)
   /* Un booléen plutôt que la liste : le panneau n'a besoin que de savoir s'il
      y a matière à ouvrir, et sélectionner un tableau recalculerait le rendu à
      chaque écriture du registre. */
@@ -128,6 +129,7 @@ export function DashboardOverview() {
         productCount={products.length}
         activationChecks={activationChecks}
         onToggle={toggleActivationCheck}
+        onObserved={markActivationDone}
       />
 
       {/* La publication est l'action la plus importante : elle passe avant les
@@ -471,12 +473,16 @@ function ActivationChecklist({
   productCount,
   activationChecks,
   onToggle,
+  onObserved,
 }: {
   business: { id: string; slug: string }
   page: { published: boolean } | null | undefined
   productCount: number
   activationChecks: string[]
+  /* Bascule manuelle, pour les boutons « Marquer comme fait » / « Annuler ». */
   onToggle: (businessId: string, step: string) => void
+  /* Constat d'une action réelle : ne s'inverse jamais. */
+  onObserved: (businessId: string, step: string) => void
 }) {
   const t = useT()
   const ac = t.dashboard.overview.activation
@@ -499,12 +505,12 @@ function ActivationChecklist({
             <Check className="size-4" />
           </span>
           <div>
-            <h2 className="text-sm font-semibold">Votre page est prête à travailler</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Prochaine action : consultez les visites et améliorez ce qui attire le plus vos clients.</p>
+            <h2 className="text-sm font-semibold">{ac.doneTitle}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{ac.doneHint}</p>
           </div>
         </div>
         <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/tableau-de-bord/analytics" />}>
-          Voir mes performances
+          {ac.doneAction}
           <ArrowRight className="size-4" aria-hidden="true" />
         </Button>
       </section>
@@ -613,7 +619,11 @@ function ActivationChecklist({
                       <Link
                         href={step.action.href!}
                         target={step.key === 'share' ? '_blank' : undefined}
-                        onClick={step.key === 'share' ? () => onToggle(business.id, step4Key) : undefined}
+                        onClick={
+                          step.key === 'share'
+                            ? () => onObserved(business.id, step4Key)
+                            : undefined
+                        }
                       />
                     }
                   >

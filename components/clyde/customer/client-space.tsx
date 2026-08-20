@@ -19,7 +19,7 @@ import {
   UserRound,
 } from 'lucide-react'
 import { Backdrop } from '@/components/clyde/backdrop'
-import { MobileDock, type MobileDockItem } from '@/components/clyde/mobile-dock'
+import { DOCK_SAFE_AREA, MobileDock, type MobileDockItem } from '@/components/clyde/mobile-dock'
 import { DataRights } from '@/components/clyde/customer/data-rights'
 import type {
   Booking,
@@ -162,7 +162,7 @@ export function ClientSpace() {
   }))
 
   return (
-    <main className="relative min-h-dvh bg-background pb-24 text-foreground lg:pb-0">
+    <main className={cn('relative min-h-dvh bg-background text-foreground', DOCK_SAFE_AREA)}>
       {/* Registre : un client vient ici relire ses commandes et ses
           réservations, c'est un relevé de compte. */}
       <Backdrop pattern="ledger" />

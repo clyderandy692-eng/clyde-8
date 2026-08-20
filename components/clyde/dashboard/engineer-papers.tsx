@@ -44,6 +44,7 @@ export function EngineerPapers({
   const { locale } = useLocale()
   const users = useClyde((s) => s.users)
   const certificates = useClyde((s) => s.certificates)
+  const markActivationDone = useClyde((s) => s.markActivationDone)
   /* Lu ici plutôt que reçu en prop : le composant est monté à deux endroits, et
      un `published` transmis à la main finirait par diverger de l'état réel. */
   const published = useClyde(
@@ -148,6 +149,9 @@ export function EngineerPapers({
           kind === 'card' ? 'carte-ingenieur' : 'certificat-fondation',
         )}.pdf`,
       )
+      /* La carte porte le QR code de la page : la télécharger vaut l'étape
+         d'activation, exactement comme la planche à imprimer. */
+      if (kind === 'card') markActivationDone(business.id, 'qr_downloaded')
       toast.success(a.ready)
     } finally {
       setBusy(null)
