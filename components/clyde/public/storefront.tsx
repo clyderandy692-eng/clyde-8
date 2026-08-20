@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react'
+import { Photo } from '@/components/clyde/photo'
 import { PageRenderer } from '@/components/clyde/page/renderer'
 
 const PageSocial = dynamic(() =>
@@ -639,10 +640,17 @@ function ProductSheet({
       <div className="flex flex-col">
         <div className="relative aspect-[4/3] w-full overflow-hidden">
           {img ? (
-            <img
+            <Photo
               src={img}
               alt={product.name}
-              className="h-full w-full object-cover"
+              fill
+              /* La fiche s'ouvre en superposition, bornée à la largeur de la
+                 feuille : inutile de demander plus large que l'écran. */
+              sizes="(min-width: 640px) 512px, 100vw"
+              /* Le visiteur vient de cliquer pour voir cette photo : elle est
+                 la seule chose qu'il attend, elle ne se charge pas en différé. */
+              priority
+              className="object-cover"
             />
           ) : (
             <div

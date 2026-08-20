@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import Image from 'next/image'
+import { Photo } from '@/components/clyde/photo'
 import { controlSurface } from '@/lib/clyde/theme'
 import { Shell, type RenderCtx } from './shared'
 import { CarouselRail } from './rail'
@@ -67,7 +67,7 @@ export function CategoriesRender({
                 aria-pressed={active}
               >
                 {cover ? (
-                  <Image src={cover} alt="" fill sizes="128px" className="object-cover" />
+                  <Photo src={cover} alt="" fill sizes="128px" className="object-cover" />
                 ) : null}
                 {/* Voile systématique, y compris sans photo : le libellé reste
                     lisible quelle que soit la teinte de l'image. */}

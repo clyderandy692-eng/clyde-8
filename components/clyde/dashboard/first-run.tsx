@@ -1,23 +1,14 @@
 'use client'
 
-import { useSearchParams } from 'next/navigation'
 import { ArrowDown, PartyPopper, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useT } from '@/lib/clyde/i18n'
 import { useClyde, useClydeReady } from '@/lib/clyde/store'
 import {
   ACTIVATION_WELCOME_KEY,
+  FIRST_RUN_PARAM,
   hasActivationCheck,
 } from '@/lib/clyde/activation'
-
-/**
- * Paramètre posé par la fin de l'inscription.
- *
- * Le seul lien entre les deux écrans : l'assistant termine, le tableau de bord
- * sait qu'il accueille quelqu'un pour la première fois. Sans lui, un commerçant
- * qui revient six mois plus tard reverrait l'accueil.
- */
-export const FIRST_RUN_PARAM = 'prise-en-main'
 
 /** Cible du bouton principal — la checklist, juste en dessous. */
 const ACTIVATION_ANCHOR = 'activation'
@@ -46,7 +37,6 @@ export function FirstRunWelcome({
 }) {
   const t = useT()
   const ac = t.dashboard.overview.activation
-  const params = useSearchParams()
   const ready = useClydeReady()
   const checks = useClyde((s) => s.activationChecks)
   const markActivationDone = useClyde((s) => s.markActivationDone)
@@ -56,7 +46,14 @@ export function FirstRunWelcome({
   /* On attend la relecture du stockage : rendre avant, c'est afficher l'accueil
      à quelqu'un qui l'a déjà écarté, puis le faire disparaître sous ses yeux. */
   if (!ready || seen || activationDone) return null
-  if (params.get(FIRST_RUN_PARAM) !== '1') return null
+
+  /* Lecture directe de l'URL, et non `useSearchParams` : ce hook fait sortir
+     toute la page du prérendu statique pour un paramètre qui n'intéresse qu'un
+     seul passage. `ready` étant faux au rendu serveur comme à l'hydratation,
+     cette ligne ne s'exécute que sur le client — sans écart d'hydratation. */
+  const requested =
+    new URLSearchParams(window.location.search).get(FIRST_RUN_PARAM) === '1'
+  if (!requested) return null
 
   const dismiss = () => markActivationDone(businessId, ACTIVATION_WELCOME_KEY)
 

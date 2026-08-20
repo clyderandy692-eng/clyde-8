@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, Check, Plus, ShoppingBag } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { Photo } from '@/components/clyde/photo'
 import { OptionPicker } from '@/components/clyde/public/option-picker'
 import { ReviewsSection } from '@/components/clyde/public/reviews'
 import { useT } from '@/lib/clyde/i18n'
@@ -80,7 +81,27 @@ export function ProductPage({ slug, productId }: { slug: string; productId: stri
       </header>
       <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-6 md:grid md:grid-cols-2 md:gap-12 md:px-8 md:py-12">
         <div className="overflow-hidden rounded-[2rem] border bg-secondary/40 shadow-sm">
-          {image ? <img src={image} alt={product.name} className="aspect-square w-full object-cover" /> : <div className="grid aspect-square place-items-center text-7xl font-bold" style={{ color: theme.brand }}>{product.name.charAt(0)}</div>}
+          {image ? (
+            /* `priority` : sur une fiche produit, cette photo est le plus grand
+               élément de l'écran — c'est elle que mesure le LCP. */
+            <div className="relative aspect-square w-full">
+              <Photo
+                src={image}
+                alt={product.name}
+                fill
+                sizes="(min-width: 768px) 40vw, 100vw"
+                priority
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div
+              className="grid aspect-square place-items-center text-7xl font-bold"
+              style={{ color: theme.brand }}
+            >
+              {product.name.charAt(0)}
+            </div>
+          )}
         </div>
         <section className="flex flex-col gap-5 self-center">
           <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"><span>{business.name}</span>{product.category_label ? <><span>·</span><span>{product.category_label}</span></> : null}</div>

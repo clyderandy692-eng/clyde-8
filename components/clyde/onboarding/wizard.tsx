@@ -20,6 +20,7 @@ import { CategoryIcon } from '@/components/clyde/category-icon'
 import { ClydeWordmark } from '@/components/clyde/mark'
 import { PageRenderer } from '@/components/clyde/page/renderer'
 import { createTemplate, DEFAULT_THEME } from '@/lib/clyde/blocks'
+import { FIRST_RUN_PARAM } from '@/lib/clyde/activation'
 import { consumePendingReferral } from '@/lib/clyde/rewards'
 import { cardSurface } from '@/lib/clyde/theme'
 import {
@@ -324,8 +325,10 @@ export function OnboardingWizard() {
     window.sessionStorage.removeItem(DRAFT_KEY)
     toast.success('Votre page est prête.')
     /* Le tableau de bord reprend immédiatement la main sur les quatre vraies
-       actions d'activation au lieu de laisser le nouveau commerçant seul. */
-    router.push('/tableau-de-bord?prise-en-main=1#activation')
+       actions d'activation au lieu de laisser le nouveau commerçant seul. Le
+       paramètre vient de l'écran qui le lit : deux littéraux séparés avaient
+       déjà divergé une fois, et l'accueil ne s'affichait plus. */
+    router.push(`/tableau-de-bord?${FIRST_RUN_PARAM}=1#activation`)
   }
 
   /* Les deux premières étapes exigent un choix ; les suivantes sont

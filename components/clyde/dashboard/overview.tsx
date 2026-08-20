@@ -38,6 +38,7 @@ import {
   trend,
 } from '@/lib/clyde/metrics'
 import { Kpi, SectionHeader } from './shell'
+import { FirstRunWelcome } from './first-run'
 import {
   JoinTeamPanel,
   FactoryMailSection,
@@ -104,6 +105,16 @@ export function DashboardOverview() {
     .filter((o) => o.status === 'pending' || o.status === 'whatsapp_opened')
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
 
+  /* Calculé ici plutôt que dans l'accueil : la checklist en a besoin de toute
+     façon, et un commerçant déjà activé qui rouvrirait un vieux lien
+     d'inscription ne doit pas se faire accueillir comme un nouveau. */
+  const activationDone = activationProgress({
+    businessId: business.id,
+    productCount: products.length,
+    published: Boolean(page?.published),
+    checks: activationChecks,
+  }).allDone
+
   return (
     <>
       <SectionHeader
@@ -119,6 +130,14 @@ export function DashboardOverview() {
             {t.dashboard.common.viewPage}
           </Button>
         }
+      />
+
+      {/* Accueil du tout premier passage, au retour de l'inscription. Il ne
+          s'affiche que sur le lien posé par l'assistant, une seule fois, et
+          renvoie vers la checklist juste en dessous. */}
+      <FirstRunWelcome
+        businessId={business.id}
+        activationDone={activationDone}
       />
 
       {/* Checklist d'activation : le premier compte qui arrive voit 4 KPI à

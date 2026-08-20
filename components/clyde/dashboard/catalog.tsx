@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Image from 'next/image'
+import { Photo } from '@/components/clyde/photo'
 import {
   Eye,
   EyeOff,
@@ -346,7 +346,7 @@ function Row({
       <div className="flex min-w-0 items-center gap-3 sm:flex-1 sm:gap-4">
       <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-muted">
         {product.media_urls[0] ? (
-          <Image
+          <Photo
             src={product.media_urls[0]}
             alt=""
             fill

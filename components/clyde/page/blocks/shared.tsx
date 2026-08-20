@@ -1,6 +1,6 @@
 'use client'
 
-import Image from 'next/image'
+import { Photo } from '@/components/clyde/photo'
 import { Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { blockVars, shade, lighten } from '@/lib/clyde/theme'
@@ -108,7 +108,12 @@ export function Thumb({
 }) {
   if (src) {
     return (
-    <Image
+    /* `Photo` et non `Image` : les commerçants collent des URL d'images
+       hébergées où ils veulent, et l'optimiseur de Next répond 400 sur un hôte
+       qu'il ne connaît pas — la vitrine perdait alors toutes ses photos, en
+       production seulement. Le chargement différé est appliqué par défaut : ces
+       vignettes se répètent dans les grilles de catalogue. */
+    <Photo
       src={src}
       alt={alt}
       width={480}
@@ -116,9 +121,6 @@ export function Thumb({
       sizes="(max-width: 767px) 50vw, 320px"
       className={cn('h-full w-full object-cover', className)}
       style={radius ? { borderRadius: radius } : undefined}
-      /* Chargement différé : ces images se répètent dans les grilles de
-         catalogue — les charger toutes d'un coup plombait le premier écran. */
-      loading="lazy"
     />
     )
   }

@@ -33,6 +33,16 @@ export const ACTIVATION_SHARE_KEY = 'link_shared'
  */
 export const ACTIVATION_WELCOME_KEY = 'welcome_seen'
 
+/**
+ * Paramètre d'URL posé par la fin de l'inscription.
+ *
+ * C'est le seul lien entre l'assistant et le tableau de bord : l'un le pose,
+ * l'autre sait qu'il accueille quelqu'un pour la première fois. Il vit ici, et
+ * non dans l'un des deux écrans, parce que deux littéraux recopiés finissent
+ * par diverger — et l'accueil disparaît alors sans que rien ne le signale.
+ */
+export const FIRST_RUN_PARAM = 'prise-en-main'
+
 /** Les constats sont stockés à plat, préfixés par le commerce. */
 export function activationKey(businessId: string, step: string) {
   return `${businessId}:${step}`
