@@ -4,7 +4,9 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      { protocol: 'https', hostname: 'hebbkx1anhila5yf.public.blob.vercel-storage.com' },
+    ],
   },
   /* Durcissement de base du site déployé. Pas de X-Frame-Options : les
      vitrines publiques (/r/…) sont faites pour être partagées et intégrées.

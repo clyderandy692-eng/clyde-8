@@ -40,7 +40,14 @@ import {
   orderTotal,
 } from '@/lib/clyde/whatsapp'
 import { cn } from '@/lib/utils'
-import type { CartLine, Product } from '@/lib/clyde/types'
+import type {
+  AvailabilityRule,
+  Business,
+  BusinessLocation,
+  CartLine,
+  Page,
+  Product,
+} from '@/lib/clyde/types'
 
 /**
  * Vitrine publique d'un commerce.
@@ -49,7 +56,25 @@ import type { CartLine, Product } from '@/lib/clyde/types'
  * n'ajoute que ce qui est propre au visiteur : fiche produit, panier,
  * contexte QR et départ vers WhatsApp.
  */
-export function Storefront({ slug, table, device }: { slug: string; table?: string; device?: 'desktop' | 'mobile' }) {
+type StorefrontInitialData = {
+  business: Business
+  page: Page
+  products: Product[]
+  locations: BusinessLocation[]
+  availability: AvailabilityRule[]
+}
+
+export function Storefront({
+  slug,
+  table,
+  device,
+  initialData,
+}: {
+  slug: string
+  table?: string
+  device?: 'desktop' | 'mobile'
+  initialData?: StorefrontInitialData
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const queryDevice = searchParams.get('previewDevice')
@@ -76,7 +101,7 @@ export function Storefront({ slug, table, device }: { slug: string; table?: stri
   const pages = useClyde((s) => s.pages)
   const allProducts = useClyde((s) => s.products)
   const allLocations = useClyde((s) => s.locations)
-  const availability = useClyde((s) => s.availability)
+  const allAvailability = useClyde((s) => s.availability)
   const createOrder = useClyde((s) => s.createOrder)
   const createBooking = useClyde((s) => s.createBooking)
   const track = useClyde((s) => s.track)
@@ -94,22 +119,28 @@ export function Storefront({ slug, table, device }: { slug: string; table?: stri
   const clearCart = useCart((s) => s.clear)
 
   const business = useMemo(
-    () => businesses.find((b) => b.slug === slug),
-    [businesses, slug],
+    () => businesses.find((b) => b.slug === slug) ?? initialData?.business,
+    [businesses, initialData?.business, slug],
   )
   const page = useMemo(
-    () => pages.find((p) => p.business_id === business?.id),
-    [pages, business?.id],
+    () =>
+      pages.find((candidate) => candidate.business_id === business?.id) ??
+      initialData?.page,
+    [business?.id, initialData?.page, pages],
   )
 
-  const products = useMemo(
-    () => allProducts.filter((p) => p.business_id === business?.id && p.active),
-    [allProducts, business?.id],
-  )
-  const locations = useMemo(
-    () => allLocations.filter((l) => l.business_id === business?.id),
-    [allLocations, business?.id],
-  )
+  const products = useMemo(() => {
+    const fromStore = allProducts.filter((product) => product.business_id === business?.id && product.active)
+    return fromStore.length > 0 ? fromStore : (initialData?.products ?? [])
+  }, [allProducts, business?.id, initialData?.products])
+  const locations = useMemo(() => {
+    const fromStore = allLocations.filter((location) => location.business_id === business?.id)
+    return fromStore.length > 0 ? fromStore : (initialData?.locations ?? [])
+  }, [allLocations, business?.id, initialData?.locations])
+  const availability = useMemo(() => {
+    const fromStore = allAvailability.filter((rule) => rule.business_id === business?.id)
+    return fromStore.length > 0 ? fromStore : (initialData?.availability ?? [])
+  }, [allAvailability, business?.id, initialData?.availability])
 
   const [openProduct, setOpenProduct] = useState<Product | null>(null)
   const [reserveProduct, setReserveProduct] = useState<Product | null>(null)
@@ -253,7 +284,7 @@ export function Storefront({ slug, table, device }: { slug: string; table?: stri
     setSent(`${p.name} ajouté au panier.`)
   }
 
-  /* Référence stable : passée à un effet du panier, une fonction recréée à
+  /* Référence stable : passée à un effet du panier, une fonction recr��ée à
      chaque rendu le relancerait en boucle. */
   const handleContactChange = useCallback(
     (contact: { name: string; phone: string }) => {

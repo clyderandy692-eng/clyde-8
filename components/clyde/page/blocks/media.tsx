@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Images } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { insetFill } from '@/lib/clyde/theme'
@@ -13,7 +14,7 @@ export function IdentityMediaRender({ block, ctx }: { block: Extract<Block, { ty
       <div className="flex flex-col items-center gap-2.5 text-center">
         {block.showLogo && (
           <div className="size-20 overflow-hidden rounded-3xl border-4 bg-background shadow-lg" style={{ borderColor: `${ctx.theme.brand}55` }}>
-            {ctx.business.logo_url ? <img src={ctx.business.logo_url} alt={`Logo ${ctx.business.name}`} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-2xl font-bold" style={{ color: ctx.theme.brand }}>{ctx.business.name.charAt(0)}</div>}
+            {ctx.business.logo_url ? <Image src={ctx.business.logo_url} alt={`Logo ${ctx.business.name}`} width={80} height={80} sizes="80px" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-2xl font-bold" style={{ color: ctx.theme.brand }}>{ctx.business.name.charAt(0)}</div>}
           </div>
         )}
         {block.showProfile && <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: ctx.theme.brand }}>{ctx.business.category.replaceAll('_', ' ')}</p>}
@@ -50,10 +51,13 @@ export function ImageGalleryRender({ block, ctx }: { block: Extract<Block, { typ
         <BlockTitle>{block.title}</BlockTitle>
         <div className={cn('grid gap-2', block.columns === 3 ? 'grid-cols-3' : 'grid-cols-2')}>
           {block.images.map((url) => (
-            <img
+            <Image
               key={url}
               src={url}
               alt="Photo de la boutique"
+              width={640}
+              height={640}
+              sizes={block.columns === 3 ? '(max-width: 767px) 33vw, 240px' : '(max-width: 767px) 50vw, 360px'}
               className="aspect-square w-full object-cover"
               style={{ borderRadius: 'calc(var(--b-radius) * 0.8)' }}
               loading="lazy"

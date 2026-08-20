@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useEffectEvent, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useEffectEvent, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import {
   ChevronDown,
@@ -16,6 +16,8 @@ import {
   Settings2,
   Smartphone,
   Trash2,
+  Upload,
+  WifiOff,
 } from 'lucide-react'
 import {
   DndContext,
@@ -45,7 +47,7 @@ import { BlockSettings } from './editor/block-settings'
 import { StorefrontIdentity } from './editor/identity'
 import { ICONS, LABELS } from './editor/labels'
 import { PageStyleSettings } from './editor/page-style'
-import { BLOCK_LIBRARY, BLOCK_META, createBlock } from '@/lib/clyde/blocks'
+import { BLOCK_LIBRARY, BLOCK_META, createBlock, publicBlocks } from '@/lib/clyde/blocks'
 import { useEditorDock } from '@/lib/clyde/editor-dock'
 import { layoutPersisted, useEditorSession } from '@/lib/clyde/editor-session'
 import {
@@ -125,6 +127,9 @@ export function PageEditor() {
   const updateTheme = useClyde((s) => s.updateTheme)
   const products = useClyde((s) => s.products)
   const availability = useClyde((s) => s.availability)
+  const publishPage = useClyde((s) => s.publishPage)
+  const setPublished = useClyde((s) => s.setPublished)
+  const updateBusiness = useClyde((s) => s.updateBusiness)
   const [selectedId, setSelectedId] = useState<string | null>(page?.layout_json[0]?.id ?? null)
   const [addOpen, setAddOpen] = useState(false)
   const [previewWidth, setPreviewWidth] = useState<390 | 856 | 1198>(856)
@@ -132,6 +137,7 @@ export function PageEditor() {
   /* Sur téléphone, structure et réglages vivent dans des tiroirs bas : la
      page ne montre que l'aperçu — trois cartes empilées noyaient l'écran. */
   const [mobilePanel, setMobilePanel] = useState<'structure' | 'settings' | null>(null)
+  const [isPreviewPending, startPreviewTransition] = useTransition()
   /* Dans le tiroir Structure (mobile), les réglages du bloc s'ouvrent en
      accordéon SOUS le bloc touché : pas d'aller-retour entre deux tiroirs. */
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -215,6 +221,17 @@ export function PageEditor() {
   }, [business, ensureSession, page])
 
   const selected = blocks.find((block) => block.id === selectedId) ?? null
+  const modules = useMemo(
+    () => ({ booking: business?.module_booking ?? false, locations: business?.module_locations ?? false }),
+    [business?.module_booking, business?.module_locations],
+  )
+  const liveBlocks = useMemo(
+    () => publicBlocks(blocks.filter((block) => !block.hidden), modules),
+    [blocks, modules],
+  )
+  /* Les champs restent instantanés pendant que React diffère le rendu coûteux
+     de toute la vitrine. Un glissement de curseur ne bloque donc plus la saisie. */
+  const previewBlocks = useDeferredValue(liveBlocks)
   const availableBlocks = useMemo(
     () => BLOCK_LIBRARY.filter((meta) => !meta.unique || !blocks.some((b) => b.type === meta.type)),
     [blocks],
@@ -321,10 +338,36 @@ export function PageEditor() {
   }
 
   function add(type: Block['type']) {
+    const required = BLOCK_META[type]?.requiresModule
+    if (required && !modules[required]) {
+      toast(copy.moduleOffLibrary, {
+        action: {
+          label: copy.activateModule,
+          onClick: () =>
+            updateBusiness(business.id, {
+              [required === 'booking' ? 'module_booking' : 'module_locations']: true,
+            }),
+        },
+      })
+      return
+    }
     const block = createBlock(type)
     commit([...blocks, block])
     setSelectedId(block.id)
     setAddOpen(false)
+  }
+
+  function publish() {
+    const result = publishPage(business.id)
+    toast(copy.publishSuccess, {
+      description:
+        result.bonusDays > 0 ? `+${result.bonusDays} ${copy.publishBonus}` : undefined,
+    })
+  }
+
+  function unpublish() {
+    setPublished(business.id, false)
+    toast(copy.unpublished)
   }
 
   function duplicateBlock(id: string) {
@@ -425,16 +468,22 @@ export function PageEditor() {
         <div className="mb-2 flex flex-col gap-1 rounded-xl border bg-muted/40 p-2">
           {availableBlocks.map((meta) => {
             const Icon = ICONS[meta.icon as keyof typeof ICONS] ?? LayoutGrid
+            const moduleOff = Boolean(meta.requiresModule && !modules[meta.requiresModule])
             return (
               <button
                 key={meta.type}
                 type="button"
-                className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-background"
+                className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-background ${moduleOff ? 'text-muted-foreground' : ''}`}
                 onClick={() => add(meta.type)}
+                title={moduleOff ? copy.moduleOffLibrary : undefined}
               >
                 <Icon className="size-4 text-muted-foreground" aria-hidden />
                 <span className="min-w-0 flex-1 truncate">{meta.label}</span>
-                <Plus className="size-3.5 text-muted-foreground" aria-hidden />
+                {moduleOff ? (
+                  <WifiOff className="size-3.5 text-muted-foreground" aria-hidden />
+                ) : (
+                  <Plus className="size-3.5 text-muted-foreground" aria-hidden />
+                )}
               </button>
             )
           })}
@@ -470,7 +519,7 @@ export function PageEditor() {
                             type="button"
                             {...handleProps}
                             className="flex min-h-9 shrink-0 cursor-grab touch-none items-center rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-muted-foreground active:cursor-grabbing"
-                            aria-label={`${meta?.label ?? block.type} — glisser pour déplacer`}
+                            aria-label={`${meta?.label ?? block.type} — ${copy.dragHandle}`}
                           >
                             <GripVertical className="size-4" aria-hidden />
                           </button>
@@ -590,17 +639,31 @@ export function PageEditor() {
             divergent. */}
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{copy.title}</h1>
-          <EditorToolbar
-            dirty={dirty}
-            canUndo={past.length > 0}
-            canRedo={future.length > 0}
-            undoLabel={copy.undo}
-            redoLabel={copy.redo}
-            publicPageLabel={copy.publicPage}
-            publicPageUrl={`/r/${business.slug}`}
-            onUndo={undo}
-            onRedo={redo}
-          />
+          <div className="flex items-center gap-2">
+            <EditorToolbar
+              dirty={dirty}
+              canUndo={past.length > 0}
+              canRedo={future.length > 0}
+              undoLabel={copy.undo}
+              redoLabel={copy.redo}
+              publicPageLabel={copy.publicPage}
+              publicPageUrl={`/r/${business.slug}`}
+              onUndo={undo}
+              onRedo={redo}
+            />
+            {page.published ? (
+              <Button size="sm" variant="outline" onClick={unpublish} className="hidden sm:inline-flex">
+                <WifiOff data-icon="inline-start" />
+                {copy.unpublish}
+              </Button>
+            ) : (
+              <Button size="sm" onClick={publish}>
+                <Upload data-icon="inline-start" />
+                <span className="hidden sm:inline">{copy.publish}</span>
+                <span className="sm:hidden">{copy.publishShort}</span>
+              </Button>
+            )}
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">{copy.description}</p>
 
@@ -684,7 +747,7 @@ export function PageEditor() {
                 <button
                   key={width}
                   type="button"
-                  onClick={() => setPreviewWidth(width)}
+                  onClick={() => startPreviewTransition(() => setPreviewWidth(width))}
                   aria-label={`${width === 390 ? copy.previewMobile : copy.previewDesktop} — ${width} px`}
                   aria-pressed={previewWidth === width}
                   className={`flex h-8 items-center gap-1 rounded-md px-2 font-mono text-xs transition-colors ${previewWidth === width ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}
@@ -716,7 +779,7 @@ export function PageEditor() {
               540 px — les réglages de bloc, plus hauts, le dépassaient de loin. */}
           <CardContent className="flex min-h-0 flex-1 justify-start overflow-auto bg-muted/30 p-1.5 md:p-6">
             <div
-              className="clyde-mock mx-auto shrink-0 overflow-hidden rounded-xl border shadow-sm transition-[width] duration-300"
+              className={`clyde-mock mx-auto shrink-0 overflow-hidden rounded-xl border shadow-sm transition-[width,opacity] duration-300 ${isPreviewPending ? 'opacity-70' : 'opacity-100'}`}
               style={{ width: previewWidth, maxWidth: previewWidth === 390 ? '100%' : undefined }}
             >
               {/* Téléphone : le simulateur vise le format d'un vrai écran de
@@ -739,7 +802,7 @@ export function PageEditor() {
                   products={products}
                   availability={availability}
                   theme={page.theme_json}
-                  blocks={blocks.filter((block) => !block.hidden)}
+                  blocks={previewBlocks}
                   device={previewDevice}
                   /* Aperçu « en direct » au sens plein : les boutons, filtres
                      et cartes répondent comme sur la page publique, pour que le

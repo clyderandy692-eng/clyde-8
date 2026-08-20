@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Backdrop } from '@/components/clyde/backdrop'
 import { BackButton } from '@/components/clyde/back-button'
-import { ClydeWordmark } from '@/components/clyde/mark'
+import { ClydeMark, ClydeWordmark } from '@/components/clyde/mark'
 import { LocaleSwitch } from '@/components/clyde/locale-switch'
 
 /**
@@ -74,6 +74,19 @@ export function AuthShell({
           className="absolute inset-0 bg-[radial-gradient(120%_80%_at_80%_0%,color-mix(in_oklab,var(--brand)_42%,transparent),transparent_68%)]"
         />
         <div className="relative">
+          {/* Monogramme seul — sans le mot « CLYDE », déjà présent en haut de la
+              colonne de gauche : la marque signe cette colonne, elle ne la
+              répète pas. La colorimétrie suit le fond sombre plutôt que de
+              l'éclaircir : les trois points neutres héritent de `bg-current`,
+              donc de `text-background` porté par l'aside, et le point d'accent
+              reste la couleur de marque — le même contraste que le monogramme
+              sur fond clair, inversé. */}
+          <div className="mb-10 flex min-h-48 items-center justify-center lg:min-h-64 xl:min-h-72">
+            <ClydeMark
+              accent="bg-brand"
+              className="size-28 gap-4 text-background sm:size-36 sm:gap-5 lg:size-44 lg:gap-6 xl:size-52 xl:gap-7"
+            />
+          </div>
           <h2 className="text-2xl font-semibold leading-snug text-balance">
             {aside.heading}
           </h2>

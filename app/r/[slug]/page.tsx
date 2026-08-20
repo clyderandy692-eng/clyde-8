@@ -1,7 +1,14 @@
 import { Suspense } from 'react'
+import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { Storefront } from '@/components/clyde/public/storefront'
-import { DEMO_BUSINESSES } from '@/lib/clyde/demo-data'
+import {
+  DEMO_AVAILABILITY,
+  DEMO_BUSINESSES,
+  DEMO_LOCATIONS,
+  DEMO_PAGES,
+  DEMO_PRODUCTS,
+} from '@/lib/clyde/demo-data'
 import { categoryLabel } from '@/lib/clyde/taxonomy'
 
 interface PageProps {
@@ -38,9 +45,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function StorefrontPage({ params }: PageProps) {
   const { slug } = await params
+  const business = DEMO_BUSINESSES.find((candidate) => candidate.slug === slug)
+  if (!business) notFound()
+
+  const page = DEMO_PAGES.find((candidate) => candidate.business_id === business.id)
+  if (!page) notFound()
+
+  const products = DEMO_PRODUCTS.filter(
+    (product) => product.business_id === business.id && product.active,
+  )
+  const locations = DEMO_LOCATIONS.filter((location) => location.business_id === business.id)
+  const availability = DEMO_AVAILABILITY.filter((rule) => rule.business_id === business.id)
+
   return (
     <Suspense fallback={<main className="min-h-dvh bg-background" />}>
-      <Storefront slug={slug} />
+      <Storefront
+        slug={slug}
+        initialData={{ business, page, products, locations, availability }}
+      />
     </Suspense>
   )
 }

@@ -70,6 +70,7 @@ const FILTER_KEYS: Array<OrderStatus | 'all' | 'abandoned'> = [
 
 /** Seuil d'abandon : en deçà, le client est probablement encore en train de choisir. */
 const ABANDON_DELAY_MS = 30 * 60_000
+const PAGE_SIZE = 20
 
 export function Orders() {
   /* La coquille du tableau de bord garantit un commerce actif avant de
@@ -100,6 +101,7 @@ export function Orders() {
   const [filter, setFilter] = useState<OrderStatus | 'all' | 'abandoned'>(
     'pending',
   )
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   const orders = useMemo(() => {
     if (!business) return []
@@ -150,6 +152,10 @@ export function Orders() {
         ? orders
         : orders.filter((o) => o.status === filter),
     [orders, filter],
+  )
+  const visiblePage = useMemo(
+    () => visible.slice(0, visibleCount),
+    [visible, visibleCount],
   )
 
   /* Statut en clair dans le fichier : « confirmed » ne veut rien dire pour
@@ -317,7 +323,10 @@ export function Orders() {
               type="button"
               role="tab"
               aria-selected={active}
-              onClick={() => setFilter(key)}
+              onClick={() => {
+                setFilter(key)
+                setVisibleCount(PAGE_SIZE)
+              }}
               className={cn(
                 'inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition-colors',
                 active
@@ -356,8 +365,9 @@ export function Orders() {
       ) : visible.length === 0 ? (
         <EmptyState hasAny={orders.length > 0} labels={d} />
       ) : (
-        <ul className="flex flex-col gap-3">
-          {visible.map((order) => {
+        <div className="flex flex-col gap-4">
+          <ul className="flex flex-col gap-3">
+          {visiblePage.map((order) => {
             const lines = allItems
               .filter((it) => it.order_id === order.id)
               .map((it) => ({
@@ -390,7 +400,17 @@ export function Orders() {
               </li>
             )
           })}
-        </ul>
+          </ul>
+          {visiblePage.length < visible.length && (
+            <Button
+              variant="outline"
+              className="self-center"
+              onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+            >
+              {locale === 'fr' ? 'Afficher 20 commandes de plus' : 'Show 20 more orders'}
+            </Button>
+          )}
+        </div>
       )}
     </div>
   )

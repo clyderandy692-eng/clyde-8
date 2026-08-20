@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { blockVars, shade, lighten } from '@/lib/clyde/theme'
@@ -107,15 +108,17 @@ export function Thumb({
 }) {
   if (src) {
     return (
-    <img
+    <Image
       src={src}
       alt={alt}
+      width={480}
+      height={480}
+      sizes="(max-width: 767px) 50vw, 320px"
       className={cn('h-full w-full object-cover', className)}
       style={radius ? { borderRadius: radius } : undefined}
       /* Chargement différé : ces images se répètent dans les grilles de
          catalogue — les charger toutes d'un coup plombait le premier écran. */
       loading="lazy"
-      decoding="async"
     />
     )
   }
