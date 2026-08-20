@@ -42,7 +42,6 @@ import {
 import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -60,6 +59,12 @@ import { PageRenderer } from '@/components/clyde/page/renderer'
 import { MediaUploader } from './media-uploader'
 import { BLOCK_LIBRARY, BLOCK_META, createBlock } from '@/lib/clyde/blocks'
 import { useEditorDock } from '@/lib/clyde/editor-dock'
+import {
+  moveEditorBlock,
+  removeEditorBlock,
+  reorderEditorBlock,
+  updateEditorBlock,
+} from '@/lib/clyde/editor-layout'
 import { useLocale } from '@/lib/clyde/i18n'
 import { useClyde, useSession } from '@/lib/clyde/store'
 import { useOwnerContext } from './use-owner'
@@ -341,7 +346,7 @@ type Copy = (typeof LABELS)[keyof typeof LABELS]
 /**
  * Enveloppe triable d'une ligne de bloc. La poignée seule saisit le bloc
  * (`handleProps` posés sur le grip) : le reste de la ligne garde ses taps —
- * sélection, flèches, interrupteur.
+ * s��lection, flèches, interrupteur.
  */
 function SortableBlockRow({
   id,
@@ -360,12 +365,6 @@ function SortableBlockRow({
     >
       {children({ handleProps: { ...attributes, ...listeners, ref: setActivatorNodeRef } })}
     </div>
-  )
-}
-
-function updateBlock<T extends Block>(blocks: Block[], id: string, patch: Partial<T>) {
-  return blocks.map((block) =>
-    block.id === id ? ({ ...block, ...patch } as Block) : block,
   )
 }
 
@@ -496,20 +495,18 @@ export function PageEditor() {
 
   function patchSelected(patch: Partial<Block>) {
     if (!selected) return
-    commit(updateBlock(blocks, selected.id, patch))
+    commit(updateEditorBlock(blocks, selected.id, patch))
   }
 
   function toggleHidden(id: string) {
-    commit(blocks.map((block) => (block.id === id ? { ...block, hidden: !block.hidden } : block)))
+    const block = blocks.find((item) => item.id === id)
+    if (!block) return
+    commit(updateEditorBlock(blocks, id, { hidden: !block.hidden }))
   }
 
   function move(id: string, direction: -1 | 1) {
-    const index = blocks.findIndex((block) => block.id === id)
-    const nextIndex = index + direction
-    if (index < 0 || nextIndex < 0 || nextIndex >= blocks.length) return
-    const next = [...blocks]
-    ;[next[index], next[nextIndex]] = [next[nextIndex], next[index]]
-    commit(next)
+    const next = moveEditorBlock(blocks, id, direction)
+    if (next !== blocks) commit(next)
   }
 
   /* Réordonnancement par glisser-déposer — complète les flèches, qui restent
@@ -517,10 +514,8 @@ export function PageEditor() {
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (!over || active.id === over.id) return
-    const oldIndex = blocks.findIndex((block) => block.id === active.id)
-    const newIndex = blocks.findIndex((block) => block.id === over.id)
-    if (oldIndex < 0 || newIndex < 0) return
-    commit(arrayMove(blocks, oldIndex, newIndex))
+    const next = reorderEditorBlock(blocks, String(active.id), String(over.id))
+    if (next !== blocks) commit(next)
   }
 
   function add(type: Block['type']) {
@@ -532,7 +527,7 @@ export function PageEditor() {
 
   function removeSelected() {
     if (!selected) return
-    const next = blocks.filter((block) => block.id !== selected.id)
+    const next = removeEditorBlock(blocks, selected.id)
     commit(next)
     setSelectedId(next[0]?.id ?? null)
   }
