@@ -10,6 +10,7 @@ import { useClyde } from '@/lib/clyde/store'
 import { engineerId, engineerPost } from '@/lib/clyde/factory'
 import { bi, findCourseById } from '@/lib/clyde/formation'
 import { revelationTitle } from '@/lib/clyde/revelation'
+import { ACTIVATION_QR_KEY } from '@/lib/clyde/activation'
 import { CATEGORY_MAP } from '@/lib/clyde/taxonomy'
 import type { Business } from '@/lib/clyde/types'
 import { cn } from '@/lib/utils'
@@ -200,7 +201,7 @@ export function EngineerPapers({
       )
       /* La carte porte le QR code de la page : la télécharger vaut l'étape
          d'activation, exactement comme la planche à imprimer. */
-      if (kind === 'card') markActivationDone(business.id, 'qr_downloaded')
+      if (kind === 'card') markActivationDone(business.id, ACTIVATION_QR_KEY)
       toast.success(a.ready)
     } finally {
       setBusy(null)

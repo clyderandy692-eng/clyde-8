@@ -1297,12 +1297,28 @@ const FR = {
         step4Title: 'Partagez votre lien',
         step4Done: 'Lien partagé',
         step4Action: 'Voir ma page',
-        markDone: 'Marquer comme fait',
-        undo: 'Annuler',
-        allDone: 'Vos premiers pas sont terminés — votre page est prête à vendre.',
+        /* Accueil de premier lancement : montré une seule fois, au retour de
+           l'inscription. Il situe l'écran, il ne réexplique pas les étapes —
+           elles sont juste en dessous. */
+        welcomeTitle: 'Bienvenue, votre commerce est créé',
+        welcomeBody:
+          'Voici votre tableau de bord. Quatre étapes restent à franchir pour que votre page commence à recevoir des commandes.',
+        welcomeAction: 'Voir mes premiers pas',
+        welcomeDismiss: 'Je regarderai plus tard',
+        /* Relais d'après-activation. Les trois cas sont exclusifs : le plus
+           urgent gagne, et il n'y en a jamais aucun. */
         doneTitle: 'Votre page est prête à travailler',
-        doneHint: 'Prochaine action : consultez les visites et améliorez ce qui attire le plus vos clients.',
+        doneHint:
+          'Prochaine action : consultez les visites et améliorez ce qui attire le plus vos clients.',
         doneAction: 'Voir mes performances',
+        ordersTitle: (n: number) =>
+          `${n} commande${n > 1 ? 's' : ''} attend${n > 1 ? 'ent' : ''} votre réponse`,
+        ordersHint: 'Répondez d’abord aux clients déjà prêts à acheter.',
+        ordersAction: 'Traiter les commandes',
+        photosTitle: (n: number) =>
+          `${n} article${n > 1 ? 's' : ''} sans photo`,
+        photosHint: 'Une photo claire aide vos visiteurs à choisir plus vite.',
+        photosAction: 'Compléter le catalogue',
       },
     },
     orders: {
@@ -2915,12 +2931,22 @@ const EN: Dict = {
         step4Title: 'Share your link',
         step4Done: 'Link shared',
         step4Action: 'View my page',
-        markDone: 'Mark as done',
-        undo: 'Undo',
-        allDone: 'Your first steps are done — your page is ready to sell.',
+        welcomeTitle: 'Welcome — your business is set up',
+        welcomeBody:
+          'This is your dashboard. Four steps are left before your page can start taking orders.',
+        welcomeAction: 'Show my first steps',
+        welcomeDismiss: 'I’ll look later',
         doneTitle: 'Your page is ready to work',
-        doneHint: 'Next up: check your visits and double down on what attracts customers most.',
+        doneHint:
+          'Next up: check your visits and double down on what attracts customers most.',
         doneAction: 'View my performance',
+        ordersTitle: (n: number) =>
+          `${n} order${n > 1 ? 's' : ''} waiting for your reply`,
+        ordersHint: 'Answer the customers who are already ready to buy.',
+        ordersAction: 'Handle orders',
+        photosTitle: (n: number) => `${n} item${n > 1 ? 's' : ''} without a photo`,
+        photosHint: 'A clear photo helps visitors decide faster.',
+        photosAction: 'Complete my catalogue',
       },
     },
     orders: {

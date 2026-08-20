@@ -24,6 +24,13 @@ import { useClyde } from '@/lib/clyde/store'
 import { formatPrice } from '@/lib/clyde/taxonomy'
 import { drawRevelationArtifact, revelationTitle } from '@/lib/clyde/revelation'
 import {
+  ACTIVATION_QR_KEY,
+  ACTIVATION_SHARE_KEY,
+  activationProgress,
+  countProductsWithoutPhoto,
+  nextVendorAction,
+} from '@/lib/clyde/activation'
+import {
   ordersWithin,
   revenueEstimate,
   statTotals,
@@ -119,16 +126,17 @@ export function DashboardOverview() {
           dans des données réelles (nombre d'articles, page publiée) — rien
           n'y est déclaré à la main. Les deux dernières demandent une
           confirmation explicite du commerçant, faute d'un signal automatique
-          fiable pour « QR imprimé » ou « lien partagé ». La checklist
-          disparaît une fois les quatre étapes acquises : elle n'a rien à dire
-          à un commerçant déjà installé. */}
+          fiable pour « QR imprimé » ou « lien partagé ». Une fois les quatre
+          étapes acquises, la carte ne disparaît pas : elle devient la prochaine
+          action utile, pour ne pas laisser un tableau de bord sans point
+          d'entrée. */}
       <ActivationChecklist
         business={business}
         page={page}
         productCount={products.length}
         activationChecks={activationChecks}
         pendingOrderCount={pending.length}
-        incompleteProductCount={products.filter((product) => product.media_urls.length === 0).length}
+        productsWithoutPhoto={countProductsWithoutPhoto(products)}
         onObserved={markActivationDone}
       />
 
@@ -474,7 +482,7 @@ function ActivationChecklist({
   productCount,
   activationChecks,
   pendingOrderCount,
-  incompleteProductCount,
+  productsWithoutPhoto,
   onObserved,
 }: {
   business: { id: string; slug: string }
@@ -482,44 +490,52 @@ function ActivationChecklist({
   productCount: number
   activationChecks: string[]
   pendingOrderCount: number
-  incompleteProductCount: number
+  productsWithoutPhoto: number
   /* Constat d'une action réelle : ne s'inverse jamais. */
   onObserved: (businessId: string, step: string) => void
 }) {
   const t = useT()
   const ac = t.dashboard.overview.activation
 
-  const step1Done = productCount >= 3
-  const step2Done = Boolean(page?.published)
-  const step3Key = 'qr_downloaded'
-  const step4Key = 'link_shared'
-  const step3Done = activationChecks.includes(`${business.id}:${step3Key}`)
-  const step4Done = activationChecks.includes(`${business.id}:${step4Key}`)
-  const allDone = step1Done && step2Done && step3Done && step4Done
+  /* Les seuils et l'ordre des priorités vivent dans `lib/clyde/activation`,
+     sous tests. Ce composant ne fait plus que choisir les mots. */
+  const {
+    itemsDone: step1Done,
+    publishDone: step2Done,
+    qrDone: step3Done,
+    shareDone: step4Done,
+    allDone,
+  } = activationProgress({
+    businessId: business.id,
+    productCount,
+    published: Boolean(page?.published),
+    checks: activationChecks,
+  })
 
   /* Après l'activation, la carte ne devient pas un cul-de-sac statique : elle
      choisit l'action qui produit le plus de valeur maintenant. */
   if (allDone) {
+    const action = nextVendorAction({ pendingOrderCount, productsWithoutPhoto })
     const nextAction =
-      pendingOrderCount > 0
+      action.kind === 'orders'
         ? {
-            title: `${pendingOrderCount} commande${pendingOrderCount > 1 ? 's' : ''} attend${pendingOrderCount > 1 ? 'ent' : ''} votre réponse`,
-            hint: 'Répondez d’abord aux clients déjà prêts à acheter.',
-            label: 'Traiter les commandes',
-            href: '/tableau-de-bord/commandes',
+            title: ac.ordersTitle(action.count),
+            hint: ac.ordersHint,
+            label: ac.ordersAction,
+            href: action.href,
           }
-        : incompleteProductCount > 0
+        : action.kind === 'photos'
           ? {
-              title: `${incompleteProductCount} article${incompleteProductCount > 1 ? 's' : ''} sans photo`,
-              hint: 'Une photo claire aide vos visiteurs à choisir plus vite.',
-              label: 'Compléter le catalogue',
-              href: '/tableau-de-bord/catalogue',
+              title: ac.photosTitle(action.count),
+              hint: ac.photosHint,
+              label: ac.photosAction,
+              href: action.href,
             }
           : {
               title: ac.doneTitle,
               hint: ac.doneHint,
               label: ac.doneAction,
-              href: '/tableau-de-bord/analytics',
+              href: action.href,
             }
     return (
       <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand/25 bg-brand/5 p-5">
@@ -631,7 +647,9 @@ function ActivationChecklist({
                     onClick={() =>
                       onObserved(
                         business.id,
-                        step.key === 'qr' ? step3Key : step4Key,
+                        step.key === 'qr'
+                          ? ACTIVATION_QR_KEY
+                          : ACTIVATION_SHARE_KEY,
                       )
                     }
                   />

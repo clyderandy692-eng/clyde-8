@@ -19,6 +19,7 @@ import type { Dict } from '@/lib/clyde/i18n'
 import { useClyde } from '@/lib/clyde/store'
 import { formatPrice } from '@/lib/clyde/taxonomy'
 import { foldAccents, relativeTime } from '@/lib/clyde/text'
+import { pageSlice } from '@/lib/clyde/pagination'
 import {
   buildCartReminderMessage,
   buildOrderReplyMessage,
@@ -153,8 +154,12 @@ export function Orders() {
         : orders.filter((o) => o.status === filter),
     [orders, filter],
   )
-  const visiblePage = useMemo(
-    () => visible.slice(0, visibleCount),
+  /* Une liste de commandes ne se purge jamais : au bout de quelques mois, tout
+     rendre coûterait des milliers de nœuds pour un écran qui n'en montre que
+     vingt. Les bornes du compteur vivent dans `pagination`, où elles sont
+     testées. */
+  const page = useMemo(
+    () => pageSlice(visible, visibleCount, PAGE_SIZE),
     [visible, visibleCount],
   )
 
@@ -367,7 +372,7 @@ export function Orders() {
       ) : (
         <div className="flex flex-col gap-4">
           <ul className="flex flex-col gap-3">
-          {visiblePage.map((order) => {
+          {page.items.map((order) => {
             const lines = allItems
               .filter((it) => it.order_id === order.id)
               .map((it) => ({
@@ -401,13 +406,18 @@ export function Orders() {
             )
           })}
           </ul>
-          {visiblePage.length < visible.length && (
+          {page.hasMore && (
             <Button
               variant="outline"
               className="self-center"
-              onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+              /* Le reste réel, pas la taille de page : la dernière fournée en
+                 compte souvent moins, et annoncer « 20 de plus » pour trois
+                 commandes ferait mentir le bouton. */
+              onClick={() => setVisibleCount(page.nextCount)}
             >
-              {locale === 'fr' ? 'Afficher 20 commandes de plus' : 'Show 20 more orders'}
+              {locale === 'fr'
+                ? `Afficher ${Math.min(PAGE_SIZE, page.remaining)} commande${Math.min(PAGE_SIZE, page.remaining) > 1 ? 's' : ''} de plus`
+                : `Show ${Math.min(PAGE_SIZE, page.remaining)} more order${Math.min(PAGE_SIZE, page.remaining) > 1 ? 's' : ''}`}
             </Button>
           )}
         </div>
