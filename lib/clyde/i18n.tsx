@@ -311,7 +311,10 @@ const FR = {
       post: 'Poste',
       id: 'Matricule',
       date: 'Délivré le',
-      signature: 'L’Usine CLYDE',
+      signature: 'Direction de l’Usine CLYDE',
+      signatoryRole: 'Autorité de délivrance',
+      verification: 'Scannez pour vérifier ce certificat',
+      verificationUrl: 'Registre public CLYDE',
     },
   },
 
@@ -2016,7 +2019,10 @@ const EN: Dict = {
       post: 'Position',
       id: 'ID number',
       date: 'Issued on',
-      signature: 'The CLYDE Factory',
+      signature: 'CLYDE Factory Directorate',
+      signatoryRole: 'Issuing authority',
+      verification: 'Scan to verify this certificate',
+      verificationUrl: 'CLYDE public register',
     },
   },
 

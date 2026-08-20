@@ -23,6 +23,29 @@ const MARGIN = 12
 const INK = 26
 const MUTED = 122
 
+export interface PdfFonts {
+  /** Contenu base64 du romain de cérémonie. */
+  display: string
+  /** Contenu base64 du mono administratif. */
+  mono: string
+}
+
+/**
+ * Enregistre les deux polices de l'Usine dans un document jsPDF.
+ *
+ * Les fichiers sont chargés par le composant uniquement au moment du
+ * téléchargement : ils ne gonflent ni le JavaScript initial ni les autres PDF.
+ */
+function registerFactoryFonts(doc: jsPDF, fonts?: PdfFonts) {
+  if (!fonts) return
+  doc.addFileToVFS('CormorantGaramond.ttf', fonts.display)
+  doc.addFont('CormorantGaramond.ttf', 'cormorant', 'normal')
+  doc.addFont('CormorantGaramond.ttf', 'cormorant', 'bold', 600)
+  doc.addFileToVFS('IBMPlexMono.ttf', fonts.mono)
+  doc.addFont('IBMPlexMono.ttf', 'plexmono', 'normal')
+  doc.addFont('IBMPlexMono.ttf', 'plexmono', 'bold')
+}
+
 /**
  * Caractères que les polices standard du PDF ne savent pas écrire.
  *
@@ -341,6 +364,9 @@ export interface CertificateLabels {
   idLabel: string
   dateLabel: string
   signature: string
+  signatoryRole: string
+  verification: string
+  verificationUrl: string
 }
 
 /**
@@ -357,6 +383,8 @@ export function buildFoundationCertificate(input: {
   engineerId: string
   date: string
   url: string
+  verificationUrl: string
+  qrDataUrl: string
   brand: string
   labels: CertificateLabels
 }): jsPDF {
@@ -374,6 +402,45 @@ export function buildFoundationCertificate(input: {
   doc.setDrawColor(215)
   doc.setLineWidth(0.3)
   doc.rect(15, 15, W - 30, H - 30)
+
+  /* Le sceau est l'ancre d'autorité du document. Il est construit en traits
+     vectoriels très fins : il reste net en grand format et ne dépend d'aucune
+     image externe. Les anneaux décentrés créent une guilloche sobre, tandis
+     que le noyau plein conserve une lecture immédiate de la marque. */
+  const sealX = W - 38
+  const sealY = 38
+  doc.setDrawColor(br, bg, bb)
+  doc.setLineWidth(0.25)
+  for (let i = 0; i < 12; i += 1) {
+    const angle = (Math.PI * 2 * i) / 12
+    doc.circle(
+      sealX + Math.cos(angle) * 1.6,
+      sealY + Math.sin(angle) * 1.6,
+      13.5,
+    )
+  }
+  doc.setLineWidth(0.7)
+  doc.circle(sealX, sealY, 10.5)
+  doc.setFillColor(br, bg, bb)
+  doc.circle(sealX, sealY, 7.5, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.setTextColor(255, 255, 255)
+  doc.text('C', sealX, sealY + 1.2, { align: 'center' })
+  doc.setFontSize(4.8)
+  doc.text('FONDATION', sealX, sealY + 5, { align: 'center', charSpace: 0.35 })
+
+  /* Deux ornements d'angle font du cadre une composition, pas une bordure Word.
+     Ils reprennent la géométrie du sceau sans concurrencer son centre. */
+  const corner = (x: number, y: number, sx: number, sy: number) => {
+    doc.setDrawColor(br, bg, bb)
+    doc.setLineWidth(0.35)
+    doc.line(x, y, x + 15 * sx, y)
+    doc.line(x, y, x, y + 15 * sy)
+    doc.circle(x + 4 * sx, y + 4 * sy, 1.4)
+  }
+  corner(15, 15, 1, 1)
+  corner(W - 15, H - 15, -1, -1)
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
@@ -444,11 +511,64 @@ export function buildFoundationCertificate(input: {
   column(W / 2 - 24, labels.idLabel, input.engineerId, true)
   column(W - 76, labels.dateLabel, input.date)
 
-  doc.setFont('helvetica', 'normal')
+  /* Bloc de délivrance : un paraphe vectoriel, un nom d'autorité et sa fonction.
+     Ce n'est plus une simple ligne anonyme posée au pied du document. */
+  const signatureX = W / 2
+  const signatureY = H - 26
+  doc.setDrawColor(br, bg, bb)
+  doc.setLineWidth(0.55)
+  doc.lines(
+    [
+      [5, -4],
+      [4, 6],
+      [5, -8],
+      [4, 7],
+      [8, -3],
+    ],
+    signatureX - 14,
+    signatureY - 5,
+  )
+  doc.setDrawColor(185)
+  doc.setLineWidth(0.25)
+  doc.line(signatureX - 26, signatureY, signatureX + 26, signatureY)
+  doc.setFont('helvetica', 'bold')
   doc.setFontSize(8)
+  doc.setTextColor(INK)
+  doc.text(pdfText(labels.signature), signatureX, signatureY + 5, {
+    align: 'center',
+  })
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(6)
   doc.setTextColor(MUTED)
-  doc.text(pdfText(labels.signature), W / 2, H - 24, { align: 'center' })
-  doc.text(pdfText(input.url), W / 2, H - 18, { align: 'center' })
+  doc.text(pdfText(labels.signatoryRole.toUpperCase()), signatureX, signatureY + 9, {
+    align: 'center',
+    charSpace: 0.45,
+  })
+
+  /* QR de registre : le matricule devient vérifiable et le document exposé
+     ramène vers CLYDE. Le texte court reste lisible si le QR est photographié
+     ou si le certificat est consulté sans appareil secondaire. */
+  const verifyQr = 22
+  const verifyX = W - 15 - verifyQr
+  const verifyY = H - 15 - verifyQr
+  doc.addImage(input.qrDataUrl, 'PNG', verifyX, verifyY, verifyQr, verifyQr)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(6.5)
+  doc.setTextColor(INK)
+  doc.text(pdfText(labels.verification), verifyX - 4, verifyY + 6, {
+    align: 'right',
+    maxWidth: 46,
+  })
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(5.5)
+  doc.setTextColor(MUTED)
+  doc.text(pdfText(labels.verificationUrl), verifyX - 4, verifyY + 14, {
+    align: 'right',
+  })
+  doc.text(pdfText(input.verificationUrl), verifyX - 4, verifyY + 18, {
+    align: 'right',
+    maxWidth: 52,
+  })
 
   return doc
 }

@@ -84,6 +84,12 @@ export function EngineerPapers({
     return `${origin}/r/${business.slug}`
   }
 
+  const verificationUrl = () => {
+    const origin =
+      typeof window === 'undefined' ? 'https://clyde.app' : window.location.origin
+    return `${origin}/verifier/${encodeURIComponent(matricule)}`
+  }
+
   const download = async (kind: 'card' | 'certificate') => {
     setBusy(kind)
     try {
@@ -108,7 +114,7 @@ export function EngineerPapers({
               /* Le canvas hors écran est déjà monté : sans image, la carte
                  perdrait sa seule fonction utile en boutique. */
               qrDataUrl: (
-                stage.current?.querySelector('canvas') as HTMLCanvasElement
+                stage.current?.querySelector('[data-qr="card"] canvas') as HTMLCanvasElement
               ).toDataURL('image/png'),
               brand: BRAND_HEX,
               labels: {
@@ -129,6 +135,10 @@ export function EngineerPapers({
               engineerId: matricule,
               date: since,
               url,
+              verificationUrl: verificationUrl(),
+              qrDataUrl: (
+                stage.current?.querySelector('[data-qr="certificate"] canvas') as HTMLCanvasElement
+              ).toDataURL('image/png'),
               brand: BRAND_HEX,
               labels: {
                 institution: t.factory.certificateLabels.institution,
@@ -139,6 +149,9 @@ export function EngineerPapers({
                 idLabel: t.factory.certificateLabels.id,
                 dateLabel: t.factory.certificateLabels.date,
                 signature: t.factory.certificateLabels.signature,
+                signatoryRole: t.factory.certificateLabels.signatoryRole,
+                verification: t.factory.certificateLabels.verification,
+                verificationUrl: t.factory.certificateLabels.verificationUrl,
               },
             })
 
@@ -280,7 +293,17 @@ export function EngineerPapers({
         aria-hidden="true"
         className="pointer-events-none fixed top-0 left-[-9999px]"
       >
-        <QRCodeCanvas value={publicUrl()} size={512} level="M" marginSize={1} />
+        <span data-qr="card">
+          <QRCodeCanvas value={publicUrl()} size={512} level="H" marginSize={4} />
+        </span>
+        <span data-qr="certificate">
+          <QRCodeCanvas
+            value={verificationUrl()}
+            size={512}
+            level="H"
+            marginSize={4}
+          />
+        </span>
       </div>
     </section>
   )
