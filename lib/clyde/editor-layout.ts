@@ -1,3 +1,4 @@
+import { BLOCK_META } from './blocks'
 import type { Block, BlockType } from './types'
 
 export function updateEditorBlock(
@@ -43,6 +44,17 @@ export function removeEditorBlock(blocks: Block[], id: string): Block[] {
   return blocks.filter((block) => block.id !== id)
 }
 
+/**
+ * Duplique un bloc juste après l'original.
+ *
+ * Un type déclaré `unique` dans `BLOCK_META` n'admet qu'un exemplaire par page :
+ * deux couvertures ou deux menus mobiles produiraient une vitrine incohérente.
+ * La barre d'outils grise déjà le bouton dans ce cas, mais l'invariant est porté
+ * ici plutôt que confié au seul rendu — c'est la règle métier, pas une finition
+ * d'affichage, et un futur appel (raccourci clavier, action groupée) ne doit pas
+ * pouvoir la contourner. La liste est renvoyée inchangée, comme pour un
+ * identifiant introuvable.
+ */
 export function duplicateEditorBlock(
   blocks: Block[],
   id: string,
@@ -51,7 +63,10 @@ export function duplicateEditorBlock(
   const index = blocks.findIndex((block) => block.id === id)
   if (index < 0) return blocks
 
-  const duplicate = structuredClone(blocks[index])
+  const source = blocks[index]
+  if (BLOCK_META[source.type]?.unique) return blocks
+
+  const duplicate = structuredClone(source)
   duplicate.id = createId()
 
   const next = [...blocks]

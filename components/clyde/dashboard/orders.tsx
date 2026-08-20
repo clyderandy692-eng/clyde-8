@@ -76,7 +76,8 @@ const PAGE_SIZE = 20
 export function Orders() {
   /* La coquille du tableau de bord garantit un commerce actif avant de
      monter cette section. */
-  const { business, locationWord } = useOwnerContext()
+  const { business, locationWord, itemWord, itemWordPlural } =
+    useOwnerContext()
   const t = useT()
   const { locale } = useLocale()
   const d = t.dashboard.orders
@@ -193,7 +194,7 @@ export function Orders() {
         .map((it) => {
           const name =
             allProducts.find((p) => p.id === it.product_id)?.name ??
-            d.removedItem
+            d.removedItem(itemWord)
           return `${it.quantity}x ${name}`
         })
         .join(' · ')
@@ -361,6 +362,7 @@ export function Orders() {
           whatsappNumber={business.whatsapp_number}
           locale={locale}
           labels={d.abandoned}
+          itemWordPlural={itemWordPlural}
           onRemind={markCartReminded}
           onDismiss={(id) => {
             dismissAbandonedCart(id)
@@ -380,7 +382,7 @@ export function Orders() {
                 note: it.note,
                 name:
                   allProducts.find((p) => p.id === it.product_id)?.name ??
-                  d.removedItem,
+                  d.removedItem(itemWord),
               }))
 
             const location = order.location_id
@@ -445,6 +447,7 @@ function AbandonedList({
   whatsappNumber,
   locale,
   labels,
+  itemWordPlural,
   onRemind,
   onDismiss,
 }: {
@@ -454,6 +457,8 @@ function AbandonedList({
   whatsappNumber: string
   locale: 'fr' | 'en'
   labels: Dict['dashboard']['orders']['abandoned']
+  /** « Plats », « Chambres »… : le mot du métier, pas « articles ». */
+  itemWordPlural: string
   onRemind: (id: string) => void
   onDismiss: (id: string) => void
 }) {
@@ -477,7 +482,7 @@ function AbandonedList({
   return (
     <div>
       <p className="pb-4 text-sm leading-relaxed text-muted-foreground">
-        {labels.body}
+        {labels.body(itemWordPlural)}
       </p>
 
       <ul className="flex flex-col gap-3">

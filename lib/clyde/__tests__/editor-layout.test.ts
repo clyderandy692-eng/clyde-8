@@ -60,12 +60,28 @@ describe('structure du constructeur de pages', () => {
   })
 
   it('ne mute ni l’original ni ses données imbriquées lors d’une duplication', () => {
+    /* Le catalogue sert de cobaye plutôt que la couverture : celle-ci n'admet
+       qu'un exemplaire, donc n'est plus duplicable. Ce test porte sur l'absence
+       de mutation ; la règle d'unicité est vérifiée juste en dessous. */
     const initial = blocks()
-    const next = duplicateEditorBlock(initial, initial[0].id, () => 'copie-hero')
+    const next = duplicateEditorBlock(initial, initial[1].id, () => 'copie-catalogue')
 
-    next[1].style = { ...next[1].style, align: 'right' }
-    expect(initial[0].style?.align).not.toBe('right')
-    expect(next[0].id).toBe(initial[0].id)
+    next[2].style = { ...next[2].style, align: 'right' }
+    expect(initial[1].style?.align).not.toBe('right')
+    expect(next[1].id).toBe(initial[1].id)
+  })
+
+  it('refuse de dupliquer un bloc dont le type n’admet qu’un exemplaire', () => {
+    /*
+     * Régression : la fonction clonait n'importe quel bloc, couverture et menu
+     * mobile compris. Seule la barre d'outils grisait le bouton, si bien qu'un
+     * autre chemin d'appel — raccourci clavier, action groupée — aurait produit
+     * une page à deux couvertures sans qu'aucun garde-fou ne s'y oppose.
+     */
+    const initial = blocks()
+
+    expect(duplicateEditorBlock(initial, initial[0].id, () => 'copie-hero')).toBe(initial)
+    expect(duplicateEditorBlock(initial, initial[2].id, () => 'copie-contact')).toBe(initial)
   })
 
   it('met à jour un bloc sans muter son état précédent', () => {
