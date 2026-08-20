@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
@@ -114,6 +114,29 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const allProducts = useClyde((s) => s.products)
   const allFollowers = useClyde((s) => s.followers)
   const allUsers = useClyde((s) => s.users)
+  const notifications = useMemo(
+    () =>
+      business
+        ? vendorNotifications({
+            businessId: business.id,
+            orders: allOrders,
+            bookings: allBookings,
+            reviews: allReviews,
+            products: allProducts,
+            followers: allFollowers,
+            users: allUsers,
+          })
+        : [],
+    [
+      allBookings,
+      allFollowers,
+      allOrders,
+      allProducts,
+      allReviews,
+      allUsers,
+      business,
+    ],
+  )
 
   /* En mode démo (aucune session), le tableau de bord s'ouvre sur le
      commerce de démonstration : sans le `|| demoMode`, la garde bloquait
@@ -132,18 +155,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const sectionPattern: BackdropPattern =
     SECTION_PATTERNS.find((s) => pathname.startsWith(s.prefix))?.pattern ??
     'gauge'
-
-  /* Dérivées à chaque rendu, jamais stockées : une commande confirmée sort
-     de la cloche d'elle-même, sans « marquer comme lu ». */
-  const notifications = vendorNotifications({
-    businessId: business.id,
-    orders: allOrders,
-    bookings: allBookings,
-    reviews: allReviews,
-    products: allProducts,
-    followers: allFollowers,
-    users: allUsers,
-  })
 
   const items: NavItem[] = [
     { href: '/tableau-de-bord', label: t.dashboard.nav.home, icon: LayoutGrid },

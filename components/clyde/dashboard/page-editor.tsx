@@ -779,7 +779,7 @@ export function PageEditor() {
               540 px — les réglages de bloc, plus hauts, le dépassaient de loin. */}
           <CardContent className="flex min-h-0 flex-1 justify-start overflow-auto bg-muted/30 p-1.5 md:p-6">
             <div
-              className="clyde-mock mx-auto shrink-0 overflow-hidden rounded-xl border shadow-sm transition-[width] duration-300"
+              className={`clyde-mock mx-auto shrink-0 overflow-hidden rounded-xl border shadow-sm transition-[width,opacity] duration-300 ${isPreviewPending ? 'opacity-70' : 'opacity-100'}`}
               style={{ width: previewWidth, maxWidth: previewWidth === 390 ? '100%' : undefined }}
             >
               {/* Téléphone : le simulateur vise le format d'un vrai écran de
@@ -802,7 +802,7 @@ export function PageEditor() {
                   products={products}
                   availability={availability}
                   theme={page.theme_json}
-                  blocks={liveBlocks}
+                  blocks={previewBlocks}
                   device={previewDevice}
                   /* Aperçu « en direct » au sens plein : les boutons, filtres
                      et cartes répondent comme sur la page publique, pour que le

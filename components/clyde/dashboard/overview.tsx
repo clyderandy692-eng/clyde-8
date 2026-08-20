@@ -58,7 +58,6 @@ export function DashboardOverview() {
   const publishPage = useClyde((s) => s.publishPage)
   const setOrderStatus = useClyde((s) => s.setOrderStatus)
   const activationChecks = useClyde((s) => s.activationChecks)
-  const toggleActivationCheck = useClyde((s) => s.toggleActivationCheck)
   const markActivationDone = useClyde((s) => s.markActivationDone)
   /* Un booléen plutôt que la liste : le panneau n'a besoin que de savoir s'il
      y a matière à ouvrir, et sélectionner un tableau recalculerait le rendu à
@@ -128,7 +127,8 @@ export function DashboardOverview() {
         page={page}
         productCount={products.length}
         activationChecks={activationChecks}
-        onToggle={toggleActivationCheck}
+        pendingOrderCount={pending.length}
+        incompleteProductCount={products.filter((product) => product.media_urls.length === 0).length}
         onObserved={markActivationDone}
       />
 
@@ -473,15 +473,16 @@ function ActivationChecklist({
   page,
   productCount,
   activationChecks,
-  onToggle,
+  pendingOrderCount,
+  incompleteProductCount,
   onObserved,
 }: {
   business: { id: string; slug: string }
   page: { published: boolean } | null | undefined
   productCount: number
   activationChecks: string[]
-  /* Bascule manuelle, pour les boutons « Marquer comme fait » / « Annuler ». */
-  onToggle: (businessId: string, step: string) => void
+  pendingOrderCount: number
+  incompleteProductCount: number
   /* Constat d'une action réelle : ne s'inverse jamais. */
   onObserved: (businessId: string, step: string) => void
 }) {
@@ -496,9 +497,30 @@ function ActivationChecklist({
   const step4Done = activationChecks.includes(`${business.id}:${step4Key}`)
   const allDone = step1Done && step2Done && step3Done && step4Done
 
-  /* La prise en main ne disparaît jamais sans laisser de relais : une fois
-     l'activation terminée, elle devient une prochaine action utile. */
+  /* Après l'activation, la carte ne devient pas un cul-de-sac statique : elle
+     choisit l'action qui produit le plus de valeur maintenant. */
   if (allDone) {
+    const nextAction =
+      pendingOrderCount > 0
+        ? {
+            title: `${pendingOrderCount} commande${pendingOrderCount > 1 ? 's' : ''} attend${pendingOrderCount > 1 ? 'ent' : ''} votre réponse`,
+            hint: 'Répondez d’abord aux clients déjà prêts à acheter.',
+            label: 'Traiter les commandes',
+            href: '/tableau-de-bord/commandes',
+          }
+        : incompleteProductCount > 0
+          ? {
+              title: `${incompleteProductCount} article${incompleteProductCount > 1 ? 's' : ''} sans photo`,
+              hint: 'Une photo claire aide vos visiteurs à choisir plus vite.',
+              label: 'Compléter le catalogue',
+              href: '/tableau-de-bord/catalogue',
+            }
+          : {
+              title: ac.doneTitle,
+              hint: ac.doneHint,
+              label: ac.doneAction,
+              href: '/tableau-de-bord/analytics',
+            }
     return (
       <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand/25 bg-brand/5 p-5">
         <div className="flex items-start gap-3">
@@ -506,12 +528,12 @@ function ActivationChecklist({
             <Check className="size-4" />
           </span>
           <div>
-            <h2 className="text-sm font-semibold">{ac.doneTitle}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{ac.doneHint}</p>
+            <h2 className="text-sm font-semibold">{nextAction.title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{nextAction.hint}</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/tableau-de-bord/analytics" />}>
-          {ac.doneAction}
+        <Button variant="outline" size="sm" nativeButton={false} render={<Link href={nextAction.href} />}>
+          {nextAction.label}
           <ArrowRight className="size-4" aria-hidden="true" />
         </Button>
       </section>
@@ -546,18 +568,14 @@ function ActivationChecklist({
       done: step3Done,
       title: ac.step3Title,
       detail: step3Done ? ac.step3Done : null,
-      action: step3Done
-        ? { label: ac.undo, onClick: () => onToggle(business.id, step3Key) }
-        : { label: ac.step3Action, href: '#papiers-ingenieur' },
+      action: { label: ac.step3Action, href: '#papiers-ingenieur' },
     },
     {
       key: 'share',
       done: step4Done,
       title: ac.step4Title,
       detail: step4Done ? ac.step4Done : null,
-      action: step4Done
-        ? { label: ac.undo, onClick: () => onToggle(business.id, step4Key) }
-        : { label: ac.step4Action, href: `/r/${business.slug}` },
+      action: { label: ac.step4Action, href: `/r/${business.slug}` },
     },
   ]
 
@@ -601,48 +619,26 @@ function ActivationChecklist({
                 )}
               </div>
             </div>
-            {step.key === 'qr' || step.key === 'share' ? (
-              step.done ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={step.action.onClick}
-                >
-                  {step.action.label}
-                </Button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    nativeButton={false}
-                    render={
-                      <Link
-                        href={step.action.href!}
-                        target={step.key === 'share' ? '_blank' : undefined}
-                        onClick={
-                          step.key === 'share'
-                            ? () => onObserved(business.id, step4Key)
-                            : undefined
-                        }
-                      />
-                    }
-                  >
-                    {step.action.label}
-                  </Button>
-                  <Button
-                    size="sm"
+            {(step.key === 'qr' || step.key === 'share') && !step.done ? (
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={
+                  <Link
+                    href={step.action.href!}
+                    target={step.key === 'share' ? '_blank' : undefined}
                     onClick={() =>
-                      onToggle(
+                      onObserved(
                         business.id,
                         step.key === 'qr' ? step3Key : step4Key,
                       )
                     }
-                  >
-                    {ac.markDone}
-                  </Button>
-                </div>
-              )
+                  />
+                }
+              >
+                {step.action.label}
+              </Button>
             ) : !step.done && step.action.href !== '#' ? (
               <Button
                 variant="outline"
