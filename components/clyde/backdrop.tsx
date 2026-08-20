@@ -161,14 +161,21 @@ export function Backdrop({
          d'extinction serait impossible à régler. Le fond appartient au haut de
          page — là où le regard arrive.
 
-         `max-h-full` borne cette hauteur au parent. Sans lui, le calque
-         dépassait le bas des pages plus courtes que 1900 px — l'éditeur sur
-         téléphone finissait sur 800 px de trame vide sous le contenu, que le
-         commerçant pouvait faire défiler. Un élément absolu ne participe pas
-         à la hauteur de son parent, mais il étend bel et bien la zone de
-         défilement du document tant qu'aucun ancêtre ne le rogne. */
+         NE PAS borner cette hauteur au parent (pas de `max-h-full`) : les
+         arrière-plans de la plateforme sont gelés par consigne produit, leur
+         étendue visible comprise. Un `max-h-full` avait été posé ici pour
+         supprimer une trame vide défilable sous l'éditeur sur téléphone ; il
+         raccourcissait la grille et les formes sur toute page plus courte que
+         1900 px, et a donc été retiré.
+
+         Effet de bord connu et assumé : sur une page plus courte que 1900 px,
+         ce calque étend la zone de défilement du document (un élément absolu
+         ne compte pas dans la hauteur de son parent, mais il repousse bien le
+         bas du document tant qu'aucun ancêtre ne le rogne). Le correctif, s'il
+         est un jour souhaité, appartient au conteneur de la page et non à ce
+         fichier. */
       className={cn(
-        'pointer-events-none absolute inset-x-0 top-0 z-0 h-[1900px] max-h-full overflow-hidden',
+        'pointer-events-none absolute inset-x-0 top-0 z-0 h-[1900px] overflow-hidden',
         className,
       )}
     >
