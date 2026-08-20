@@ -189,6 +189,7 @@ export function Locations() {
         <>
           <PrintSheetBanner
             locations={locations}
+            businessId={business.id}
             slug={business.slug}
             businessName={business.name}
             locationWordPlural={locationWordPlural}
@@ -261,17 +262,21 @@ export function Locations() {
  */
 function PrintSheetBanner({
   locations,
+  businessId,
   slug,
   businessName,
   locationWordPlural,
 }: {
   locations: BusinessLocation[]
+  businessId: string
   slug: string
   businessName: string
   locationWordPlural: string
 }) {
   const t = useT()
   const d = t.dashboard.locations
+  const activationChecks = useClyde((s) => s.activationChecks)
+  const toggleActivationCheck = useClyde((s) => s.toggleActivationCheck)
   const [busy, setBusy] = useState(false)
   /* Conteneur hors écran : les QR pleine résolution y sont rendus le temps de
      l'export, puis retirés. */
@@ -310,6 +315,10 @@ function PrintSheetBanner({
       })
 
       downloadBlob(doc.output('blob'), `${safeFilename('qr', slug)}.pdf`)
+      const activationKey = `${businessId}:qr_downloaded`
+      if (!activationChecks.includes(activationKey)) {
+        toggleActivationCheck(businessId, 'qr_downloaded')
+      }
       toast.success(d.printSheetDone)
     } catch {
       toast.error(d.printSheetFailed)

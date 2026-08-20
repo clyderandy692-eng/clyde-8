@@ -227,7 +227,9 @@ export function OnboardingWizard() {
     updateTheme(id, theme)
     setActiveBusiness(id)
     toast.success('Votre page est prête.')
-    router.push('/tableau-de-bord')
+    /* Le tableau de bord reprend immédiatement la main sur les quatre vraies
+       actions d'activation au lieu de laisser le nouveau commerçant seul. */
+    router.push('/tableau-de-bord?prise-en-main=1#activation')
   }
 
   /* Les deux premières étapes exigent un choix ; les suivantes sont

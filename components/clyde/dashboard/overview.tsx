@@ -489,10 +489,27 @@ function ActivationChecklist({
   const step4Done = activationChecks.includes(`${business.id}:${step4Key}`)
   const allDone = step1Done && step2Done && step3Done && step4Done
 
-  /* Une fois les quatre étapes acquises, la checklist n'a plus rien à
-     annoncer à un commerçant déjà installé : elle disparaît plutôt que de
-     rester affichée, satisfaite, indéfiniment. */
-  if (allDone) return null
+  /* La prise en main ne disparaît jamais sans laisser de relais : une fois
+     l'activation terminée, elle devient une prochaine action utile. */
+  if (allDone) {
+    return (
+      <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand/25 bg-brand/5 p-5">
+        <div className="flex items-start gap-3">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand text-brand-foreground" aria-hidden="true">
+            <Check className="size-4" />
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold">Votre page est prête à travailler</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Prochaine action : consultez les visites et améliorez ce qui attire le plus vos clients.</p>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/tableau-de-bord/analytics" />}>
+          Voir mes performances
+          <ArrowRight className="size-4" aria-hidden="true" />
+        </Button>
+      </section>
+    )
+  }
 
   const steps: {
     key: string
@@ -538,7 +555,7 @@ function ActivationChecklist({
   ]
 
   return (
-    <section className="mb-6 rounded-2xl border border-border bg-background p-5">
+    <section id="activation" className="mb-6 scroll-mt-6 rounded-2xl border border-border bg-background p-5">
       <h2 className="text-sm font-semibold">{ac.title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{ac.subtitle}</p>
       <ul className="mt-4 flex flex-col gap-2.5">
@@ -596,6 +613,7 @@ function ActivationChecklist({
                       <Link
                         href={step.action.href!}
                         target={step.key === 'share' ? '_blank' : undefined}
+                        onClick={step.key === 'share' ? () => onToggle(business.id, step4Key) : undefined}
                       />
                     }
                   >

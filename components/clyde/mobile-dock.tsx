@@ -38,7 +38,7 @@ export function MobileDock({
   return (
     <nav
       aria-label={label}
-      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex items-end justify-around rounded-[1.6rem] border border-border bg-background/95 px-2 pt-2 pb-2 shadow-[0_16px_40px_-18px_rgba(0,0,0,0.5)] backdrop-blur-xl lg:hidden"
+      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex items-end justify-around rounded-[1.6rem] border border-border bg-background/95 px-2 pt-2 pb-2 shadow-[0_16px_40px_-18px_rgba(0,0,0,0.5)] backdrop-blur-xl max-h-[400px]:py-1 max-h-[400px]:landscape:items-center lg:hidden"
     >
       {items.map(({ key, href, label: itemLabel, icon: Icon, primary, active, onClick, badge, menuItems }) => {
         const content = (
@@ -47,8 +47,8 @@ export function MobileDock({
               className={cn(
                 'relative flex items-center justify-center',
                 primary
-                  ? '-mt-1 h-20 w-[4.5rem] rounded-t-[2.75rem] rounded-b-[1.6rem] border-4 border-background bg-brand pt-2 shadow-lg'
-                  : 'size-10',
+                  ? '-mt-1 h-20 w-[4.5rem] rounded-t-[2.75rem] rounded-b-[1.6rem] border-4 border-background bg-brand pt-2 shadow-lg max-h-[400px]:landscape:h-12 max-h-[400px]:landscape:w-14 max-h-[400px]:landscape:rounded-2xl max-h-[400px]:landscape:pt-0'
+                  : 'size-10 max-h-[400px]:landscape:size-8',
               )}
             >
               <span
@@ -71,8 +71,8 @@ export function MobileDock({
           </>
         )
         const className = cn(
-          'flex min-h-11 min-w-14 flex-1 flex-col items-center gap-1 text-[10px] font-semibold transition-transform active:scale-95',
-          primary && '-mt-8',
+          'flex min-h-11 min-w-14 flex-1 flex-col items-center gap-1 text-[10px] font-semibold transition-transform active:scale-95 max-h-[400px]:landscape:min-h-10 max-h-[400px]:landscape:flex-row max-h-[400px]:landscape:justify-center',
+          primary && '-mt-8 max-h-[400px]:landscape:-mt-2',
         )
 
         if (menuItems) {

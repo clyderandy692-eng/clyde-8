@@ -138,8 +138,23 @@ export function AdminFollowers() {
           {visible.length === 0 ? (
             <p className="px-5 py-8 text-sm text-muted-foreground">Aucun abonné pour cette sélection.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left text-sm">
+            <div>
+              <ul className="flex flex-col divide-y divide-border md:hidden">
+                {visible.map((r) => (
+                  <li key={r.id} className="flex flex-col gap-3 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div><p className="font-medium">{r.name}</p><p className="text-xs text-muted-foreground">{r.boutique}</p></div>
+                      <time className="shrink-0 text-xs text-muted-foreground">{new Date(r.since).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</time>
+                    </div>
+                    <dl className="grid gap-2 text-sm">
+                      <div className="flex justify-between gap-4"><dt className="text-muted-foreground">WhatsApp</dt><dd>{r.whatsapp ?? '—'}</dd></div>
+                      <div className="flex justify-between gap-4"><dt className="text-muted-foreground">E-mail</dt><dd className="min-w-0 truncate">{r.email ?? '—'}</dd></div>
+                      <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Quartier</dt><dd>{r.neighborhood ?? '—'}</dd></div>
+                    </dl>
+                  </li>
+                ))}
+              </ul>
+              <table className="hidden w-full text-left text-sm md:table">
                 <thead>
                   <tr className="border-b border-border text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                     <th scope="col" className="px-4 py-3">Boutique</th>

@@ -881,7 +881,7 @@ export function PageEditor() {
           La grille se dimensionne au contenu, et c'est l'aperçu (ligne
           suivante) qui borne sa propre hauteur pour rester au-dessus du dock.
           Sur grand écran, le dock n'existe pas : la hauteur pleine revient. */}
-      <div className="grid min-w-0 gap-5 lg:h-[calc(100dvh-150px)] lg:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)_320px]">
+      <div className="grid min-w-0 gap-5 xl:h-[calc(100dvh-150px)] xl:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)_320px]">
         {/* Structure : carte visible sur grand écran seulement — sur téléphone
             elle vit dans le tiroir bas. */}
         <Card className="hidden min-h-0 min-w-0 flex-col overflow-hidden lg:flex">
