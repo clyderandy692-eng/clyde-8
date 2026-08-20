@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   Bell,
   CalendarDays,
@@ -76,7 +76,12 @@ export function ClientSpace() {
   const orderItems = useClyde((s) => s.orderItems)
   const allBookings = useClyde((s) => s.bookings)
   const followers = useClyde((s) => s.followers)
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'bookings' | 'favorites' | 'follows'>('overview')
+  const pathname = usePathname()
+  const activeTab = pathname.endsWith('/commandes') ? 'orders'
+    : pathname.endsWith('/reservations') ? 'bookings'
+      : pathname.endsWith('/favoris') ? 'favorites'
+        : pathname.endsWith('/boutiques') ? 'follows'
+          : 'overview'
   const [query, setQuery] = useState('')
   const [favorites, setFavorites] = useState(() => new Set(products.slice(0, 4).map((product) => product.id)))
 
@@ -141,18 +146,19 @@ export function ClientSpace() {
   if (!customer) return null
 
   const tabs = [
-    { id: 'overview' as const, label: 'Vue d’ensemble', shortLabel: 'Accueil', icon: Sparkles },
-    { id: 'orders' as const, label: 'Mes commandes', shortLabel: 'Commandes', icon: ShoppingBag },
-    { id: 'bookings' as const, label: 'Réservations', shortLabel: 'Agenda', icon: CalendarDays },
-    { id: 'favorites' as const, label: 'Favoris', shortLabel: 'Favoris', icon: Heart },
-    { id: 'follows' as const, label: 'Mes boutiques', shortLabel: 'Boutiques', icon: Store },
+    { id: 'overview' as const, href: '/espace-client', label: 'Vue d’ensemble', shortLabel: 'Accueil', icon: Sparkles, count: null },
+    { id: 'orders' as const, href: '/espace-client/commandes', label: 'Mes commandes', shortLabel: 'Commandes', icon: ShoppingBag, count: orders.length },
+    { id: 'bookings' as const, href: '/espace-client/reservations', label: 'Réservations', shortLabel: 'Agenda', icon: CalendarDays, count: bookings.length },
+    { id: 'favorites' as const, href: '/espace-client/favoris', label: 'Favoris', shortLabel: 'Favoris', icon: Heart, count: favorites.size },
+    { id: 'follows' as const, href: '/espace-client/boutiques', label: 'Mes boutiques', shortLabel: 'Boutiques', icon: Store, count: followedShops.length },
   ]
-  const mobileItems: MobileDockItem[] = tabs.map(({ id, shortLabel, icon }) => ({
+  const mobileItems: MobileDockItem[] = tabs.map(({ id, href, shortLabel, icon, count }) => ({
     key: id,
+    href,
     label: shortLabel,
     icon,
+    badge: count ?? undefined,
     active: activeTab === id,
-    onClick: () => setActiveTab(id),
   }))
 
   return (
@@ -210,11 +216,10 @@ export function ClientSpace() {
           {/* Sur ordinateur : liste latérale. Sur mobile, la navigation vit
               dans la barre du bas — même modèle que le reste de la plateforme. */}
           <nav className="mt-6 hidden lg:block lg:space-y-1" aria-label="Espace client">
-            {tabs.map(({ id, label, icon: Icon }) => (
-              <button
+            {tabs.map(({ id, href, label, icon: Icon, count }) => (
+              <Link
                 key={id}
-                type="button"
-                onClick={() => setActiveTab(id)}
+                href={href}
                 className={cn(
                   'flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold transition-colors lg:w-full',
                   activeTab === id ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -222,8 +227,9 @@ export function ClientSpace() {
                 aria-current={activeTab === id ? 'page' : undefined}
               >
                 <Icon className="size-4" aria-hidden="true" />
-                {label}
-              </button>
+                <span className="min-w-0 flex-1">{label}</span>
+                {count !== null ? <span className="font-mono text-xs opacity-70">{count}</span> : null}
+              </Link>
             ))}
           </nav>
         </aside>
@@ -283,7 +289,7 @@ export function ClientSpace() {
               <section>
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold">Activité récente</h2>
-                  <button type="button" onClick={() => setActiveTab('orders')} className="text-sm font-semibold text-brand">Tout voir</button>
+                  <button type="button" onClick={() => router.push('/espace-client/commandes')} className="text-sm font-semibold text-brand">Tout voir</button>
                 </div>
                 <div className="mt-4 divide-y divide-border rounded-3xl border border-border bg-card">
                   {orders.slice(0, 3).map((order) => {
@@ -301,7 +307,7 @@ const business = businesses.find((item) => item.id === order.business_id)
                 </div>
               </section>
 
-              <FavoriteSection products={favoriteProducts.slice(0, 3)} onToggle={toggleFavorite} onSeeAll={() => setActiveTab('favorites')} />
+              <FavoriteSection products={favoriteProducts.slice(0, 3)} onToggle={toggleFavorite} onSeeAll={() => router.push('/espace-client/favoris')} />
             </div>
           ) : activeTab === 'orders' ? (
             <OrdersPanel orders={orders} businesses={businesses} orderItems={orderItems} />
@@ -336,6 +342,7 @@ function FavoriteSection({ products, onToggle, onSeeAll }: { products: Product[]
 }
 
 function FavoriteGrid({ products, onToggle, compact = false }: { products: Product[]; onToggle: (id: string) => void; compact?: boolean }) {
+  if (products.length === 0) return <ClientEmptyState title="Aucun favori" description="Ajoutez un cœur depuis la marketplace pour retrouver ici vos produits et services préférés." />
   return <div className={cn('mt-4 grid gap-3 sm:grid-cols-2', compact ? 'lg:grid-cols-3' : 'lg:grid-cols-3')}>{products.map((product) => <article key={product.id} className="group overflow-hidden rounded-3xl border border-border bg-card"><div className="relative aspect-[1.45] overflow-hidden bg-muted"><img src={productImage(product) || "/placeholder.svg"} alt={product.name} className="size-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" /><button type="button" onClick={() => onToggle(product.id)} aria-label={`Retirer ${product.name} des favoris`} className="absolute top-3 right-3 flex size-9 items-center justify-center rounded-full bg-background/90 text-brand shadow-sm"><Heart className="size-4 fill-current" aria-hidden="true" /></button></div><div className="p-4"><p className="line-clamp-1 font-semibold">{product.name}</p><p className="mt-1 text-sm text-muted-foreground">{formatPrice(product.price, 'XAF')}</p></div></article>)}</div>
 }
 
@@ -381,10 +388,20 @@ function FollowsPanel({ shops }: { shops: Business[] }) {
   )
 }
 
+function ClientEmptyState({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="mt-5 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border bg-card px-5 py-10 text-center">
+      <span className="flex size-11 items-center justify-center rounded-2xl bg-muted text-muted-foreground"><Sparkles className="size-5" aria-hidden="true" /></span>
+      <div><p className="font-semibold">{title}</p><p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">{description}</p></div>
+      <Link href="/marketplace" className="text-sm font-semibold text-brand">Explorer les commerces</Link>
+    </div>
+  )
+}
+
 function OrdersPanel({ orders, businesses, orderItems }: { orders: Order[]; businesses: Business[]; orderItems: OrderItem[] }) {
-  return <section className="mt-8"><h2 className="text-2xl font-bold">Mes commandes</h2><p className="mt-1 text-sm text-muted-foreground">Suivez vos dernières commandes chez les commerces CLYDE.</p><div className="mt-5 space-y-3">{orders.map((order) => { const business = businesses.find((item) => item.id === order.business_id); const items = orderItems.filter((item) => item.order_id === order.id); return <article key={order.id} className="rounded-3xl border border-border bg-card p-5"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{business?.name ?? 'Commande'}</p><p className="mt-1 text-sm text-muted-foreground">{dateLabel(order.created_at)} · {items.length} article{items.length > 1 ? 's' : ''}</p></div><div className="flex items-center gap-3"><span className={cn('rounded-full px-2.5 py-1 text-[11px] font-semibold', statusClass(order.status))}>{orderLabels[order.status]}</span><span className="font-semibold">{formatPrice(order.total_estimate, business?.currency ?? 'XAF')}</span></div></div></article> })}</div></section>
+  return <section className="mt-8"><h2 className="text-2xl font-bold">Mes commandes <span className="font-mono text-base text-muted-foreground">({orders.length})</span></h2><p className="mt-1 text-sm text-muted-foreground">Suivez vos dernières commandes chez les commerces CLYDE.</p>{orders.length === 0 ? <ClientEmptyState title="Aucune commande" description="Vos commandes apparaîtront ici après votre premier achat auprès d’un commerce CLYDE." /> : <div className="mt-5 space-y-3">{orders.map((order) => { const business = businesses.find((item) => item.id === order.business_id); const items = orderItems.filter((item) => item.order_id === order.id); return <article key={order.id} className="rounded-3xl border border-border bg-card p-5"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{business?.name ?? 'Commande'}</p><p className="mt-1 text-sm text-muted-foreground">{dateLabel(order.created_at)} · {items.length} article{items.length > 1 ? 's' : ''}</p></div><div className="flex items-center gap-3"><span className={cn('rounded-full px-2.5 py-1 text-[11px] font-semibold', statusClass(order.status))}>{orderLabels[order.status]}</span><span className="font-semibold">{formatPrice(order.total_estimate, business?.currency ?? 'XAF')}</span></div></div></article> })}</div>}</section>
 }
 
 function BookingsPanel({ bookings, businesses, products }: { bookings: Booking[]; businesses: Business[]; products: Product[] }) {
-  return <section className="mt-8"><h2 className="text-2xl font-bold">Mes réservations</h2><p className="mt-1 text-sm text-muted-foreground">Vos créneaux confirmés et vos demandes en cours.</p><div className="mt-5 space-y-3">{bookings.map((booking) => { const service = products.find((product) => product.id === booking.service_id); const business = businesses.find((item) => item.id === booking.business_id); return <article key={booking.id} className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><div className="flex size-11 items-center justify-center rounded-2xl bg-brand/10 text-brand"><CalendarDays className="size-5" aria-hidden="true" /></div><div><p className="font-semibold">{service?.name ?? 'Réservation'}</p><p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="size-3.5" aria-hidden="true" />{business?.name ?? 'Commerce'} · {dateLabel(booking.start_at, true)}</p></div></div><div className="flex items-center justify-between gap-4 sm:justify-end"><span className={cn('rounded-full px-2.5 py-1 text-[11px] font-semibold', statusClass(booking.status))}>{bookingLabels[booking.status]}</span><span className="text-sm font-semibold">{formatPrice(booking.total_estimate ?? 0, business?.currency ?? 'XAF')}</span></div></article> })}</div></section>
+  return <section className="mt-8"><h2 className="text-2xl font-bold">Mes réservations <span className="font-mono text-base text-muted-foreground">({bookings.length})</span></h2><p className="mt-1 text-sm text-muted-foreground">Vos créneaux confirmés et vos demandes en cours.</p>{bookings.length === 0 ? <ClientEmptyState title="Aucune réservation" description="Les rendez-vous pris chez un commerce CLYDE seront regroupés ici." /> : <div className="mt-5 space-y-3">{bookings.map((booking) => { const service = products.find((product) => product.id === booking.service_id); const business = businesses.find((item) => item.id === booking.business_id); return <article key={booking.id} className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><div className="flex size-11 items-center justify-center rounded-2xl bg-brand/10 text-brand"><CalendarDays className="size-5" aria-hidden="true" /></div><div><p className="font-semibold">{service?.name ?? 'Réservation'}</p><p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="size-3.5" aria-hidden="true" />{business?.name ?? 'Commerce'} · {dateLabel(booking.start_at, true)}</p></div></div><div className="flex items-center justify-between gap-4 sm:justify-end"><span className={cn('rounded-full px-2.5 py-1 text-[11px] font-semibold', statusClass(booking.status))}>{bookingLabels[booking.status]}</span><span className="text-sm font-semibold">{formatPrice(booking.total_estimate ?? 0, business?.currency ?? 'XAF')}</span></div></article> })}</div>}</section>
 }

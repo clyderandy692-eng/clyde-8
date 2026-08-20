@@ -97,8 +97,8 @@ export function AdminOverview() {
     /** Destination du détail — la carte devient cliquable. */
     href?: string
   }[] = [
-    { label: 'À arbitrer', value: pendingReportCount, icon: Flag, alert: pendingReportCount > 0 },
-    { label: 'Échanges dus', value: openRedemptionCount, icon: Package, alert: openRedemptionCount > 0 },
+    { label: 'À arbitrer', value: pendingReportCount, icon: Flag, alert: pendingReportCount > 0, href: '/admin/arbitrage' },
+    { label: 'Échanges dus', value: openRedemptionCount, icon: Package, alert: openRedemptionCount > 0, href: '/admin/echanges' },
     { label: 'Commerces', value: businesses.length, icon: Building2 },
     { label: 'Utilisateurs', value: users.length, icon: Users },
     /* Le compteur d'abonnés mène à la liste segmentée par boutique : un

@@ -9,9 +9,9 @@ import { cn } from '@/lib/utils'
 
 const adminLinks = [
   { href: '/admin', label: 'Aperçu', icon: LayoutDashboard },
-  { href: '/admin#arbitrage', label: 'Arbitrage', icon: Flag },
-  { href: '/admin#echanges', label: 'Échanges', icon: Package },
-  { href: '/admin#formations', label: 'Cours', icon: GraduationCap },
+  { href: '/admin/arbitrage', label: 'Arbitrage', icon: Flag },
+  { href: '/admin/echanges', label: 'Échanges', icon: Package },
+  { href: '/admin/formations', label: 'Cours', icon: GraduationCap },
   { href: '/admin/abonnes', label: 'Abonnés', icon: Users },
 ]
 
@@ -26,15 +26,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   )
   const isActive = (href: string) => href === '/admin'
     ? pathname === '/admin'
-    : href.includes('#')
-      ? false
-      : pathname.startsWith(href)
+    : pathname === href || pathname.startsWith(`${href}/`)
 
   const mobileItems: MobileDockItem[] = adminLinks.map((item) => ({
     ...item,
     key: item.href,
     active: isActive(item.href),
-    badge: item.href.includes('arbitrage') ? pendingReports : item.href.includes('echanges') ? pendingRedemptions : undefined,
+    badge: item.href === '/admin/arbitrage' ? pendingReports : item.href === '/admin/echanges' ? pendingRedemptions : undefined,
   }))
 
   return (

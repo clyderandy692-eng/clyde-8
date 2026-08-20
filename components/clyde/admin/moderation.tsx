@@ -219,8 +219,9 @@ export function AdminModeration() {
         </p>
       ) : (
         <ul className="mt-5 flex flex-col gap-4">
-          {pending.map((item) => {
+          {pending.map((item, index) => {
             const note = notes[item.key] ?? ''
+            const waitingDays = Math.max(0, Math.floor((Date.now() - new Date(item.createdAt).getTime()) / 86_400_000))
 
             return (
               <li
@@ -229,8 +230,12 @@ export function AdminModeration() {
               >
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <span className="rounded-full bg-foreground px-2 py-0.5 font-mono font-bold text-background">
-                    {item.label}
+                    Priorité {index + 1}
                   </span>
+                  <span className="rounded-full border border-border px-2 py-0.5 font-mono font-bold text-foreground">
+                    {waitingDays === 0 ? 'reçu aujourd’hui' : `${waitingDays} j d’attente`}
+                  </span>
+                  <span className="font-semibold text-foreground">{item.label}</span>
                   <span className="text-muted-foreground">
                     signalé par {item.reporterName}
                   </span>
