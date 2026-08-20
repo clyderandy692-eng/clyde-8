@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { CalendarDays, Clock3, MapPin, Send, X } from 'lucide-react'
 import { Overlay } from '@/components/clyde/public/overlay'
-import { freeSlotsForDay, slotStepForDay, slotsForDay } from '@/components/clyde/page/blocks'
+import { freeSlotsForDay, slotStepForDay, slotsForDay } from '@/components/clyde/page/blocks/booking-slots'
 import { useClyde } from '@/lib/clyde/store'
 import { formatDuration } from '@/lib/clyde/whatsapp'
 import { formatPrice } from '@/lib/clyde/taxonomy'
