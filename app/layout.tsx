@@ -1,15 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
-import {
-  Kanit,
-  Geist_Mono,
-  Inter,
-  Playfair_Display,
-  Space_Grotesk,
-  Lora,
-} from 'next/font/google'
-import { LofiPlayer } from '@/components/clyde/landing/lofi-player'
+import { Kanit, Geist_Mono, Playfair_Display } from 'next/font/google'
 import { StoreHydrator } from '@/components/clyde/store-hydrator'
 import { Toaster } from '@/components/ui/sonner'
 import { LocaleProvider } from '@/lib/clyde/i18n'
@@ -23,14 +15,13 @@ const _kanit = Kanit({
 })
 const _mono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
 
-/* Liste courte et curatée pour le page builder (plan v5, §7.4) */
-const _inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+/* La seule fonte éditoriale additionnelle reste Playfair. Les variantes Inter,
+   Space et Lora du constructeur utilisent désormais les piles système : trois
+   téléchargements de fontes sont ainsi retirés de chaque route. */
 const _playfair = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-playfair',
 })
-const _space = Space_Grotesk({ subsets: ['latin'], variable: '--font-space' })
-const _lora = Lora({ subsets: ['latin'], variable: '--font-lora' })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://clyde.app'),
@@ -93,7 +84,7 @@ export default function RootLayout({
     <html
       lang="fr"
       data-scroll-behavior="smooth"
-      className={`light bg-background ${_kanit.variable} ${_mono.variable} ${_inter.variable} ${_playfair.variable} ${_space.variable} ${_lora.variable}`}
+      className={`light bg-background ${_kanit.variable} ${_mono.variable} ${_playfair.variable}`}
     >
       <body className="font-sans antialiased">
         {/* Les animations d'entrée démarrent ici, avant l'hydratation de React.
@@ -123,7 +114,6 @@ export default function RootLayout({
             des données par l'état de démonstration. */}
         <StoreHydrator />
         <LocaleProvider>{children}</LocaleProvider>
-        <LofiPlayer />
         <Toaster position="top-center" />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

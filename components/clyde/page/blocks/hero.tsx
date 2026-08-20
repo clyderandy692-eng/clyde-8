@@ -126,6 +126,8 @@ export function HeroRender({ block, ctx }: { block: HeroBlock; ctx: RenderCtx })
             src={img}
             alt={block.title}
             className="absolute inset-0 h-full w-full object-cover"
+            fetchPriority={ctx.interactive ? 'high' : 'auto'}
+            decoding="async"
           />
         ) : (
           /* Sans photo : surface dérivée de la couleur de marque, jamais une image cassée */
@@ -234,6 +236,8 @@ export function HeroRender({ block, ctx }: { block: HeroBlock; ctx: RenderCtx })
                 src={logoUrl}
                 alt={`Photo de profil ${ctx.business.name}`}
                 className="h-full w-full rounded-full object-cover"
+                loading="lazy"
+                decoding="async"
               />
             ) : (
               <span
