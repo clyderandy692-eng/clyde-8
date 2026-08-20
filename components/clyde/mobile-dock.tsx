@@ -38,7 +38,7 @@ export function MobileDock({
   return (
     <nav
       aria-label={label}
-      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex items-end justify-around rounded-[1.6rem] border border-border bg-background/95 px-2 pt-2 pb-2 shadow-[0_16px_40px_-18px_rgba(0,0,0,0.5)] backdrop-blur-xl max-h-[400px]:py-1 max-h-[400px]:landscape:items-center lg:hidden"
+      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex items-end justify-around rounded-[1.6rem] border border-border bg-background/95 px-2 pt-2 pb-2 shadow-[0_16px_40px_-18px_rgba(0,0,0,0.5)] backdrop-blur-xl [@media(max-height:430px)]:items-center [@media(max-height:430px)]:py-1 lg:hidden"
     >
       {items.map(({ key, href, label: itemLabel, icon: Icon, primary, active, onClick, badge, menuItems }) => {
         const content = (
@@ -47,17 +47,24 @@ export function MobileDock({
               className={cn(
                 'relative flex items-center justify-center',
                 primary
-                  ? '-mt-1 h-20 w-[4.5rem] rounded-t-[2.75rem] rounded-b-[1.6rem] border-4 border-background bg-brand pt-2 shadow-lg max-h-[400px]:landscape:h-12 max-h-[400px]:landscape:w-14 max-h-[400px]:landscape:rounded-2xl max-h-[400px]:landscape:pt-0'
-                  : 'size-10 max-h-[400px]:landscape:size-8',
+                  ? '-mt-1 h-20 w-[4.5rem] rounded-t-[2.75rem] rounded-b-[1.6rem] border-4 border-background bg-brand pt-2 shadow-lg [@media(max-height:430px)]:h-11 [@media(max-height:430px)]:w-12 [@media(max-height:430px)]:rounded-2xl [@media(max-height:430px)]:pt-0'
+                  : 'size-10 [@media(max-height:430px)]:size-7',
               )}
             >
               <span
                 className={cn(
                   'flex items-center justify-center rounded-full',
-                  primary ? 'size-10 bg-background text-brand' : active ? 'bg-brand/10 text-brand' : 'text-muted-foreground',
+                  primary
+                    ? 'size-10 bg-background text-brand [@media(max-height:430px)]:size-7 [@media(max-height:430px)]:bg-transparent [@media(max-height:430px)]:text-brand-foreground'
+                    : active
+                      ? 'bg-brand/10 text-brand'
+                      : 'text-muted-foreground',
                 )}
               >
-                <Icon className={primary ? 'size-7' : 'size-5'} aria-hidden="true" />
+                <Icon
+                  className={primary ? 'size-7 [@media(max-height:430px)]:size-5' : 'size-5'}
+                  aria-hidden="true"
+                />
               </span>
               {badge ? (
                 <span className="absolute top-0 right-0 grid size-4 place-items-center rounded-full bg-brand font-mono text-[9px] font-bold text-brand-foreground">
@@ -71,8 +78,8 @@ export function MobileDock({
           </>
         )
         const className = cn(
-          'flex min-h-11 min-w-14 flex-1 flex-col items-center gap-1 text-[10px] font-semibold transition-transform active:scale-95 max-h-[400px]:landscape:min-h-10 max-h-[400px]:landscape:flex-row max-h-[400px]:landscape:justify-center',
-          primary && '-mt-8 max-h-[400px]:landscape:-mt-2',
+          'flex min-h-11 min-w-14 flex-1 flex-col items-center gap-1 text-[10px] font-semibold transition-transform active:scale-95 [@media(max-height:430px)]:min-h-11 [@media(max-height:430px)]:flex-row [@media(max-height:430px)]:justify-center [@media(max-height:430px)]:gap-1.5',
+          primary && '-mt-8 [@media(max-height:430px)]:mt-0',
         )
 
         if (menuItems) {
