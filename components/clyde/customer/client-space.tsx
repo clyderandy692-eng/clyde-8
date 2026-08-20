@@ -163,7 +163,10 @@ export function ClientSpace() {
   }))
 
   return (
-    <main className={cn('relative min-h-dvh bg-background text-foreground', DOCK_SAFE_AREA)}>
+    /* `overflow-clip` : rogne le fond décoratif de 1900 px, qui étendait la
+       zone de défilement sous le contenu des pages courtes. Mécanisme
+       détaillé dans `dashboard/shell.tsx`. */
+    <main className={cn('relative min-h-dvh overflow-clip bg-background text-foreground', DOCK_SAFE_AREA)}>
       {/* Registre : un client vient ici relire ses commandes et ses
           réservations, c'est un relevé de compte. */}
       <Backdrop pattern="ledger" />

@@ -327,7 +327,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   )
 
   return (
-    <div className="relative min-h-dvh bg-secondary/30">
+    /* `overflow-clip` : le fond décoratif (`Backdrop`) mesure 1900 px en
+       absolu. Un élément absolu ne grandit pas son parent, mais il repousse
+       la zone de défilement du document — toute page plus courte laissait
+       donc plusieurs centaines de pixels de vide défilable sous son contenu.
+       Le fond est gelé par consigne produit, et son propre commentaire
+       désigne ce conteneur comme le seul endroit légitime du correctif.
+       `clip` et non `hidden` : `hidden` créerait un conteneur de défilement
+       et casserait le `sticky` de la barre mobile ; `clip` rogne, sans rien
+       changer d'autre. La barre latérale et le dock sont `fixed`, donc hors
+       d'atteinte du rognage. */
+    <div className="relative min-h-dvh overflow-clip bg-secondary/30">
       <Backdrop pattern={sectionPattern} />
       {/* Barre latérale — desktop */}
       {/* `z-20` : le <main> qui suit porte `relative z-10` et s'étend sur toute

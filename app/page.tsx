@@ -31,9 +31,12 @@ export default function LandingPage() {
        Elle pointait vers « #top », un identifiant qui n'existe que dans la
        vitrine rendue à l'intérieur du mockup du téléphone — l'appui menait
        donc au milieu de la page au lieu d'y remonter. */
+    /* `overflow-clip` : rogne le fond décoratif de 1900 px, qui étendait la
+       zone de défilement sous le contenu des pages courtes. Mécanisme
+       détaillé dans `dashboard/shell.tsx`. */
     <div
       id="accueil"
-      className="relative min-h-dvh bg-background font-sans text-foreground"
+      className="relative min-h-dvh overflow-clip bg-background font-sans text-foreground"
     >
       {/* Papier millimétré : la table à dessin avant le tracé. C'est la page où
           l'on promet de construire — le fond montre le support, pas l'ouvrage.

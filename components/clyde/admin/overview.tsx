@@ -109,7 +109,10 @@ export function AdminOverview() {
   ]
 
   return (
-    <main className="relative min-h-dvh bg-secondary/30 px-4 py-6 md:px-8 md:py-10">
+    /* `overflow-clip` : rogne le fond décoratif de 1900 px, qui étendait la
+       zone de défilement sous le contenu des pages courtes. Mécanisme
+       détaillé dans `dashboard/shell.tsx`. */
+    <main className="relative min-h-dvh overflow-clip bg-secondary/30 px-4 py-6 md:px-8 md:py-10">
       {/* Registre : le quadrillage d'un livre de comptes, le lieu où l'on
           arbitre et où l'on compte. */}
       <Backdrop pattern="ledger" />

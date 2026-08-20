@@ -337,7 +337,10 @@ export function OnboardingWizard() {
     step === 0 ? Boolean(family) : step === 1 ? Boolean(category) : true
 
   return (
-    <main className="relative min-h-dvh lg:grid lg:grid-cols-[1fr_420px]">
+    /* `overflow-clip` : rogne le fond décoratif de 1900 px, qui étendait la
+       zone de défilement sous le contenu des pages courtes. Mécanisme
+       détaillé dans `dashboard/shell.tsx`. */
+    <main className="relative min-h-dvh overflow-clip lg:grid lg:grid-cols-[1fr_420px]">
       {/* Papier millimétré, comme l'accueil : ici on dessine littéralement sa
           boutique. La promesse faite sur la page d'accueil se tient à cet
           endroit, le support est donc le même. */}
