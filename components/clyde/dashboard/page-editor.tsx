@@ -35,14 +35,10 @@ import {
 } from '@dnd-kit/sortable'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
 import { PageRenderer } from '@/components/clyde/page/renderer'
-import { MediaUploader } from './media-uploader'
 import { EditorToolbar } from './editor/editor-toolbar'
 import { SortableBlockRow } from './editor/sortable-block-row'
 import { BlockSettings } from './editor/block-settings'
@@ -60,16 +56,9 @@ import {
   updateEditorBlock,
 } from '@/lib/clyde/editor-layout'
 import { useLocale } from '@/lib/clyde/i18n'
-import { useClyde, useSession } from '@/lib/clyde/store'
+import { useClyde } from '@/lib/clyde/store'
 import { useOwnerContext } from './use-owner'
-import {
-  AMBIANCES,
-  activeAmbianceId,
-  applyAmbiance,
-  hasCustomColors,
-  resetBlockColors,
-  resetOneBlockColors,
-} from '@/lib/clyde/ambiances'
+import { resetBlockColors } from '@/lib/clyde/ambiances'
 import type {
   Block,
   BlockStyle,
@@ -693,14 +682,20 @@ export function PageEditor() {
               className="clyde-mock mx-auto shrink-0 overflow-hidden rounded-xl border shadow-sm transition-[width] duration-300"
               style={{ width: previewWidth, maxWidth: previewWidth === 390 ? '100%' : undefined }}
             >
-              {/* Téléphone : la hauteur du simulateur se cale sur l'espace
-                  réellement libre entre l'en-tête de l'éditeur et le dock
-                  d'outils flottant (`~27rem` de chrome au-dessus + dock en
-                  dessous), avec un plancher pour rester utilisable sur les
-                  petits écrans. Une hauteur fixe de 540px passait sous le
-                  dock, qui masquait la barre basse de la vitrine simulée.
-                  Sur grand écran, le simulateur occupe toute la carte. */}
-              <div className="clyde-no-scrollbar h-[calc(100dvh-27rem)] min-h-[20rem] overflow-y-auto lg:h-full lg:min-h-[540px]">
+              {/* Téléphone : le simulateur vise le format d'un vrai écran de
+                  téléphone (`75dvh`), et non l'espace laissé libre par le
+                  chrome de l'éditeur.
+
+                  La version précédente retranchait `27rem` de chrome à la
+                  hauteur de l'écran. Le compte tombait juste sur un grand
+                  écran, mais sur un téléphone de 844 px il ne restait que
+                  412 px d'aperçu : la vitrine s'arrêtait sous sa couverture et
+                  le commerçant jugeait sa mise en page sur un demi-écran. La
+                  page de l'éditeur défile déjà — le simulateur n'a aucune
+                  raison de tenir dans un seul écran.
+
+                  Sur grand écran, il occupe toute la carte comme avant. */}
+              <div className="clyde-no-scrollbar h-[75dvh] min-h-[30rem] overflow-y-auto lg:h-full lg:min-h-[540px]">
                 <PageRenderer
                   key={previewWidth}
                   business={business}

@@ -159,9 +159,16 @@ export function Backdrop({
          `inset-x-0 top-0` + hauteur bornée, et non `inset-0` : sur une page
          longue le calque ferait toute la hauteur du document et le dégradé
          d'extinction serait impossible à régler. Le fond appartient au haut de
-         page — là où le regard arrive. */
+         page — là où le regard arrive.
+
+         `max-h-full` borne cette hauteur au parent. Sans lui, le calque
+         dépassait le bas des pages plus courtes que 1900 px — l'éditeur sur
+         téléphone finissait sur 800 px de trame vide sous le contenu, que le
+         commerçant pouvait faire défiler. Un élément absolu ne participe pas
+         à la hauteur de son parent, mais il étend bel et bien la zone de
+         défilement du document tant qu'aucun ancêtre ne le rogne. */
       className={cn(
-        'pointer-events-none absolute inset-x-0 top-0 z-0 h-[1900px] overflow-hidden',
+        'pointer-events-none absolute inset-x-0 top-0 z-0 h-[1900px] max-h-full overflow-hidden',
         className,
       )}
     >
