@@ -7,34 +7,49 @@ type HistoryEntry = {
   past: Block[][]
   future: Block[][]
   dirty: boolean
+  /** Empreinte du dernier état dont l’écriture a été réellement vérifiée. */
+  savedHash: string | null
   lastGroup: string | null
   lastCommitAt: number
 }
 
 type EditorSessionState = {
   sessions: Record<string, HistoryEntry>
-  ensure: (businessId: string) => void
-  commit: (businessId: string, previous: Block[], group?: string) => void
+  ensure: (businessId: string, initial: Block[]) => void
+  commit: (businessId: string, previous: Block[], next: Block[], group?: string) => void
   undo: (businessId: string, current: Block[]) => Block[] | null
   redo: (businessId: string, current: Block[]) => Block[] | null
-  markSaved: (businessId: string) => void
+  markSaved: (businessId: string, current: Block[]) => void
 }
 
 const EMPTY: HistoryEntry = {
   past: [],
   future: [],
   dirty: false,
+  savedHash: null,
   lastGroup: null,
   lastCommitAt: 0,
 }
 
+function layoutHash(layout: Block[]): string {
+  return JSON.stringify(layout)
+}
+
 export const useEditorSession = create<EditorSessionState>((set, get) => ({
   sessions: {},
-  ensure: (businessId) => set((state) => state.sessions[businessId]
+  ensure: (businessId, initial) => set((state) => state.sessions[businessId]
     ? state
-    : { sessions: { ...state.sessions, [businessId]: { ...EMPTY } } }),
-  commit: (businessId, previous, group) => set((state) => {
-    const current = state.sessions[businessId] ?? EMPTY
+    : {
+        sessions: {
+          ...state.sessions,
+          [businessId]: { ...EMPTY, savedHash: layoutHash(initial) },
+        },
+      }),
+  commit: (businessId, previous, next, group) => set((state) => {
+    const current = state.sessions[businessId] ?? {
+      ...EMPTY,
+      savedHash: layoutHash(previous),
+    }
     const now = Date.now()
     const grouped = Boolean(group && current.lastGroup === group && now - current.lastCommitAt < 700)
     return {
@@ -43,7 +58,8 @@ export const useEditorSession = create<EditorSessionState>((set, get) => ({
         [businessId]: {
           past: grouped ? current.past : [...current.past.slice(-49), previous],
           future: [],
-          dirty: true,
+          dirty: layoutHash(next) !== current.savedHash,
+          savedHash: current.savedHash,
           lastGroup: group ?? null,
           lastCommitAt: now,
         },
@@ -61,7 +77,7 @@ export const useEditorSession = create<EditorSessionState>((set, get) => ({
           ...session,
           past: session.past.slice(0, -1),
           future: [currentLayout, ...session.future],
-          dirty: true,
+          dirty: layoutHash(previous) !== session.savedHash,
           lastGroup: null,
         },
       },
@@ -79,17 +95,22 @@ export const useEditorSession = create<EditorSessionState>((set, get) => ({
           ...session,
           past: [...session.past, currentLayout],
           future: session.future.slice(1),
-          dirty: true,
+          dirty: layoutHash(next) !== session.savedHash,
           lastGroup: null,
         },
       },
     }))
     return next
   },
-  markSaved: (businessId) => set((state) => ({
+  markSaved: (businessId, current) => set((state) => ({
     sessions: {
       ...state.sessions,
-      [businessId]: { ...(state.sessions[businessId] ?? EMPTY), dirty: false, lastGroup: null },
+      [businessId]: {
+        ...(state.sessions[businessId] ?? EMPTY),
+        dirty: false,
+        savedHash: layoutHash(current),
+        lastGroup: null,
+      },
     },
   })),
 }))

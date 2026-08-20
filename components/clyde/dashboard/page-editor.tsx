@@ -145,10 +145,6 @@ export function PageEditor() {
   }, [addOpen, mobilePanel, setDockActivePanel])
 
   useEffect(() => {
-    if (business) ensureSession(business.id)
-  }, [business, ensureSession])
-
-  useEffect(() => {
     const width = window.innerWidth
     setPreviewWidth(width < 1024 ? 390 : width >= 1536 ? 1198 : 856)
   }, [])
@@ -176,6 +172,14 @@ export function PageEditor() {
   }, [])
 
   const blocks = page?.layout_json ?? []
+
+  /* La première mise en page observée devient la référence enregistrée. Le
+     store de session survit aux remontages du constructeur ; `ensure` ne
+     remplace donc jamais une session qui possède déjà son historique. */
+  useEffect(() => {
+    if (business && page) ensureSession(business.id, page.layout_json)
+  }, [business, ensureSession, page])
+
   const selected = blocks.find((block) => block.id === selectedId) ?? null
   const availableBlocks = useMemo(
     () => BLOCK_LIBRARY.filter((meta) => !meta.unique || !blocks.some((b) => b.type === meta.type)),
@@ -194,7 +198,7 @@ export function PageEditor() {
     const probe = window.setInterval(() => {
       attempts += 1
       if (layoutPersisted(business.id, blocks)) {
-        markSaved(business.id)
+        markSaved(business.id, blocks)
         window.clearInterval(probe)
       } else if (attempts >= 12) {
         /* ~3 s sans écriture visible : on abandonne la vérification et on
@@ -216,7 +220,7 @@ export function PageEditor() {
   if (!business || !page) return null
 
   function commit(next: Block[], group?: string) {
-    commitSession(business.id, blocks, group)
+    commitSession(business.id, blocks, next, group)
     updateLayout(business.id, next)
   }
 
@@ -618,7 +622,7 @@ export function PageEditor() {
           La grille se dimensionne au contenu, et c'est l'aperçu (ligne
           suivante) qui borne sa propre hauteur pour rester au-dessus du dock.
           Sur grand écran, le dock n'existe pas : la hauteur pleine revient. */}
-      <div className="grid min-w-0 gap-5 xl:h-[calc(100dvh-150px)] xl:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)_320px]">
+      <div className="grid min-w-0 gap-5 lg:h-[calc(100dvh-150px)] lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)_320px]">
         {/* Structure : carte visible sur grand écran seulement — sur téléphone
             elle vit dans le tiroir bas. */}
         <Card className="hidden min-h-0 min-w-0 flex-col overflow-hidden lg:flex">
