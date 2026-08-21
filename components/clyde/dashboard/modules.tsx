@@ -17,7 +17,8 @@ import {
 import { useBlockMeta, useT } from '@/lib/clyde/i18n'
 import { useClyde } from '@/lib/clyde/store'
 import { BLOCK_META } from '@/lib/clyde/blocks'
-import type { Block, BlockType } from '@/lib/clyde/types'
+import { effectiveLayout } from '@/lib/clyde/page-draft'
+import type { Block, BlockType, Page } from '@/lib/clyde/types'
 import { cn } from '@/lib/utils'
 import { SectionHeader } from './shell'
 import { useOwnerContext } from './use-owner'
@@ -35,6 +36,21 @@ function dependentBlocks(layout: Block[], module: ModuleId): BlockType[] {
   return layout
     .filter((b) => BLOCK_META[b.type]?.requiresModule === module)
     .map((b) => b.type)
+}
+
+/**
+ * Blocs concernés sur la page en ligne ET dans le brouillon.
+ *
+ * Les deux comptent, pour deux raisons différentes : la page en ligne casse à
+ * l'instant où le module est coupé, le brouillon cassera à sa publication.
+ * N'interroger que l'une des deux laisserait passer la moitié des cas — et
+ * celle qu'on laisserait passer serait silencieuse.
+ */
+function dependentInPage(page: Page | null | undefined, module: ModuleId): BlockType[] {
+  if (!page) return []
+  const live = dependentBlocks(page.layout_json, module)
+  const draft = dependentBlocks(effectiveLayout(page), module)
+  return [...new Set([...live, ...draft])]
 }
 
 export function DashboardModules() {
@@ -107,7 +123,7 @@ export function DashboardModules() {
     }
 
     /* Désactivation : on confirme seulement si la page en ligne en dépend. */
-    const affected = page ? dependentBlocks(page.layout_json, id) : []
+    const affected = dependentInPage(page, id)
     if (affected.length > 0) {
       setConfirming(id)
       return
@@ -116,8 +132,7 @@ export function DashboardModules() {
   }
 
   const pending = confirming
-  const pendingBlocks =
-    pending && page ? dependentBlocks(page.layout_json, pending) : []
+  const pendingBlocks = pending ? dependentInPage(page, pending) : []
 
   return (
     <div className="flex flex-col gap-6">
