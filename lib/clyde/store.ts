@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { createTemplate, DEFAULT_THEME } from './blocks'
+import { discardDraft, publishDraft } from './page-draft'
 import { normalizePhone } from './whatsapp'
 import { dayKey } from './metrics'
 import {
@@ -169,8 +170,16 @@ interface ClydeState {
   toggleModule: (id: string, module: 'locations' | 'booking') => void
 
   /* --- Page builder --- */
+  /**
+   * Écrit la mise en page du BROUILLON, pas celle que voit le visiteur.
+   *
+   * Exception assumée : une page jamais publiée est modifiée directement — il
+   * n'y a pas de public à protéger, et rien à publier avant de voir sa page.
+   */
   updateLayout: (businessId: string, layout: Block[]) => void
   updateTheme: (businessId: string, theme: PageTheme) => void
+  /** Abandonne le brouillon et revient à la page en ligne. */
+  discardDraft: (businessId: string) => void
   setPublished: (businessId: string, published: boolean) => void
 
   /* --- Produits --- */
@@ -588,6 +597,10 @@ export const useClyde = create<ClydeState>()(
         booking: input.moduleBooking,
         businessName: input.name,
       }),
+      /* Une page neuve n'est pas publiée : le constructeur écrit donc
+         directement dans `layout_json` et n'ouvre aucun brouillon. */
+      draft_layout_json: null,
+      draft_theme_json: null,
       published: false,
     }
 
@@ -708,17 +721,36 @@ export const useClyde = create<ClydeState>()(
       ),
     })),
 
+  /* Le constructeur écrit dans le BROUILLON, jamais dans la page en ligne.
+     C'est ce qui permet de préparer une refonte sans la publier. Une page
+     jamais publiée fait exception : tant que personne ne peut la voir, il n'y a
+     rien à protéger, et lui imposer une publication pour un premier essai
+     n'aurait fait qu'ajouter une étape avant le premier résultat visible. */
   updateLayout: (businessId, layout) =>
     set((s) => ({
-      pages: s.pages.map((p) =>
-        p.business_id === businessId ? { ...p, layout_json: layout } : p,
-      ),
+      pages: s.pages.map((p) => {
+        if (p.business_id !== businessId) return p
+        return p.published
+          ? { ...p, draft_layout_json: layout }
+          : { ...p, layout_json: layout, draft_layout_json: null }
+      }),
     })),
 
   updateTheme: (businessId, theme) =>
     set((s) => ({
+      pages: s.pages.map((p) => {
+        if (p.business_id !== businessId) return p
+        return p.published
+          ? { ...p, draft_theme_json: theme }
+          : { ...p, theme_json: theme, draft_theme_json: null }
+      }),
+    })),
+
+  /* Jette le brouillon : la page revient à ce qui est en ligne. */
+  discardDraft: (businessId) =>
+    set((s) => ({
       pages: s.pages.map((p) =>
-        p.business_id === businessId ? { ...p, theme_json: theme } : p,
+        p.business_id === businessId ? discardDraft(p) : p,
       ),
     })),
 
@@ -1289,7 +1321,7 @@ export const useClyde = create<ClydeState>()(
     if (!firstPublication) {
       set((s) => ({
         pages: s.pages.map((p) =>
-          p.business_id === businessId ? { ...p, published: true } : p,
+          p.business_id === businessId ? publishDraft(p) : p,
         ),
       }))
       return { firstPublication: false, referralCompleted: false, bonusDays: 0 }
@@ -1338,7 +1370,7 @@ export const useClyde = create<ClydeState>()(
 
     set((s) => ({
       pages: s.pages.map((p) =>
-        p.business_id === businessId ? { ...p, published: true } : p,
+        p.business_id === businessId ? publishDraft(p) : p,
       ),
       trialBonuses: [...s.trialBonuses, ...created],
       referrals: pending
