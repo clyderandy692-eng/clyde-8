@@ -148,7 +148,13 @@ export function AdminOverview() {
           </div>
         </header>
 
-        <section id="apercu" className="grid scroll-mt-6 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Indicateurs plateforme">
+        {/* Quatre colonnes et non trois : les sept indicateurs se répartissaient
+            en 3 + 3 + 1, laissant « Commandes » seule sur sa ligne au tiers de
+            la largeur — une carte que l'œil lit comme un défaut de mise en page
+            plutôt que comme un chiffre. En 4 + 3, la dernière ligne reste
+            pleine à trois cartes sur quatre, et les deux compteurs qui
+            appellent une action gardent la tête de la première. */}
+        <section id="apercu" className="grid scroll-mt-6 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Indicateurs plateforme">
           {cards.map(({ label, value, icon: Icon, alert, href }) => {
             const inner = (
               <>
