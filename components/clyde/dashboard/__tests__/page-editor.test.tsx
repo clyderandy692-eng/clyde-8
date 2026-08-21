@@ -18,7 +18,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
-import { createBlock } from '@/lib/clyde/blocks'
+import { BLOCK_META, createBlock } from '@/lib/clyde/blocks'
 import { DEMO_ACTIVE_BUSINESS_ID } from '@/lib/clyde/demo-data'
 import { useEditorSession } from '@/lib/clyde/editor-session'
 import { useClyde, useSession } from '@/lib/clyde/store'
@@ -40,7 +40,7 @@ const LAYOUT = (): Block[] => [
  * factice dont la forme divergerait de la vraie.
  */
 function seed(layout: Block[] = LAYOUT(), published = true) {
-  useSession.setState({ userId: null, activeBusinessId: null })
+  useSession.setState({ userId: undefined, activeBusinessId: undefined })
   useClyde.setState((state) => ({
     pages: state.pages.map((p) =>
       p.business_id === DEMO_ACTIVE_BUSINESS_ID
@@ -69,7 +69,16 @@ const types = (blocks: Block[]) => blocks.map((b) => b.type)
  * nommé : l'écran a deux colonnes et un panneau de réglages, et une requête
  * globale sur « Monter » ramènerait aussi les boutons de l'aperçu.
  */
-const rows = () => screen.getAllByLabelText('Monter').map((b) => b.closest('li') ?? b.parentElement!)
+const rows = () =>
+  screen.getAllByLabelText('Monter').map((bouton) => {
+    /* Deux niveaux au-dessus : le parent immédiat ne groupe que les flèches et
+       l'interrupteur. Le rang entier — libellé compris — est son parent. Une
+       première version s'arrêtait au parent immédiat et ne voyait donc jamais
+       de quel bloc il s'agissait. */
+    const rang = bouton.parentElement?.parentElement
+    if (!rang) throw new Error('rang introuvable au-dessus de « Monter »')
+    return rang
+  })
 
 /**
  * Le bandeau du brouillon, désigné par son nom accessible.
@@ -80,6 +89,36 @@ const rows = () => screen.getAllByLabelText('Monter').map((b) => b.closest('li')
 const bandeau = () => screen.getByRole('status', { name: 'Brouillon non publié' })
 const pasDeBandeau = () =>
   screen.queryByRole('status', { name: 'Brouillon non publié' }) === null
+
+/**
+ * L'état désactivé d'une commande.
+ *
+ * On lit la propriété plutôt que d'ajouter `jest-dom` pour ses matchers : le
+ * projet n'en dépend pas, et une dépendance de confort dans la chaîne de tests
+ * est une dépendance de plus à maintenir en état.
+ */
+const estDesactive = (el: HTMLElement) => (el as HTMLButtonElement).disabled
+
+/**
+ * L'ordre des blocs tel qu'il est AFFICHÉ, exprimé en types.
+ *
+ * Vérifier l'état enregistré ne suffit pas : une première version de ces tests
+ * passait alors que la liste relisait la page en ligne au lieu du brouillon.
+ * L'écriture était juste, l'affichage faux, et rien ne le disait — le
+ * commerçant aurait vu ses déplacements disparaître à chaque rendu.
+ *
+ * Les libellés sont dérivés de `BLOCK_META`, jamais écrits en dur : c'est du
+ * texte de dictionnaire, il doit pouvoir être réécrit sans casser ce test.
+ */
+const displayed = (): string[] => {
+  const parLibelle = new Map(
+    Object.entries(BLOCK_META).map(([type, meta]) => [meta.label, type]),
+  )
+  return rows().map((row) => {
+    const trouve = [...parLibelle.keys()].find((label) => row.textContent?.includes(label))
+    return trouve ? parLibelle.get(trouve)! : '?'
+  })
+}
 
 beforeEach(async () => {
   useEditorSession.setState({ sessions: {} })
@@ -103,6 +142,8 @@ describe('constructeur — rendu et commandes', () => {
     await user.click(within(rows()[1]).getByLabelText('Monter'))
 
     await waitFor(() => expect(types(working())).toEqual(['faq', 'hero', 'contact']))
+    /* Écrit ET affiché : ce sont deux chemins de code distincts. */
+    expect(displayed()).toEqual(['faq', 'hero', 'contact'])
   })
 
   /* Régression : `move` borne l'index. Sans cette garde, monter le premier bloc
@@ -111,8 +152,8 @@ describe('constructeur — rendu et commandes', () => {
     render(<PageEditor />)
     await waitFor(() => expect(rows()).toHaveLength(3))
 
-    expect(within(rows()[0]).getByLabelText('Monter')).toBeDisabled()
-    expect(within(rows()[2]).getByLabelText('Descendre')).toBeDisabled()
+    expect(estDesactive(within(rows()[0]).getByLabelText('Monter'))).toBe(true)
+    expect(estDesactive(within(rows()[2]).getByLabelText('Descendre'))).toBe(true)
   })
 
   it('masque un bloc sans le retirer de la page', async () => {
@@ -132,11 +173,10 @@ describe('constructeur — rendu et commandes', () => {
     render(<PageEditor />)
     await waitFor(() => expect(rows()).toHaveLength(3))
 
-    const annuler = screen.getByLabelText('Annuler')
-    expect(annuler).toBeDisabled()
+    expect(estDesactive(screen.getByLabelText('Annuler'))).toBe(true)
 
     await user.click(within(rows()[1]).getByLabelText('Monter'))
-    await waitFor(() => expect(screen.getByLabelText('Annuler')).toBeEnabled())
+    await waitFor(() => expect(estDesactive(screen.getByLabelText('Annuler'))).toBe(false))
 
     await user.click(screen.getByLabelText('Annuler'))
     await waitFor(() => expect(types(working())).toEqual(['hero', 'faq', 'contact']))
@@ -162,6 +202,10 @@ describe('constructeur — brouillon d’une page en ligne', () => {
     expect(types(stored().draft_layout_json!)).toEqual(['faq', 'hero', 'contact'])
     /* L'invariant du chantier : ce que voient les visiteurs n'a pas bougé. */
     expect(types(stored().layout_json)).toEqual(['hero', 'faq', 'contact'])
+    /* Et le constructeur montre le BROUILLON, pas la page en ligne. Sans cette
+       ligne, un écran qui écrit dans le brouillon mais réaffiche la page en
+       ligne passerait le test — c'est arrivé. */
+    expect(displayed()).toEqual(['faq', 'hero', 'contact'])
   })
 
   it('annonce le brouillon en attente et propose de le publier', async () => {
@@ -215,7 +259,7 @@ describe('constructeur — brouillon d’une page en ligne', () => {
     await waitFor(() => bandeau())
     await user.click(within(bandeau()).getAllByRole('button')[0])
 
-    await waitFor(() => expect(screen.getByLabelText('Annuler')).toBeDisabled())
+    await waitFor(() => expect(estDesactive(screen.getByLabelText('Annuler'))).toBe(true))
   })
 
   /* Régression : un brouillon ne naît que sur une page DÉJÀ en ligne. Sur une
