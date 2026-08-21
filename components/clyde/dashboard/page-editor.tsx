@@ -8,6 +8,7 @@ import {
   Circle,
   CopyIcon,
   Eye,
+  FileClock,
   GripVertical,
   LayoutGrid,
   Monitor,
@@ -58,6 +59,7 @@ import {
   updateEditorBlock,
 } from '@/lib/clyde/editor-layout'
 import { useLocale } from '@/lib/clyde/i18n'
+import { effectiveLayout, effectiveTheme, hasPendingDraft } from '@/lib/clyde/page-draft'
 import { useClyde } from '@/lib/clyde/store'
 import { useOwnerContext } from './use-owner'
 import { resetBlockColors } from '@/lib/clyde/ambiances'
@@ -130,7 +132,9 @@ export function PageEditor() {
   const publishPage = useClyde((s) => s.publishPage)
   const setPublished = useClyde((s) => s.setPublished)
   const updateBusiness = useClyde((s) => s.updateBusiness)
-  const [selectedId, setSelectedId] = useState<string | null>(page?.layout_json[0]?.id ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(
+    page ? effectiveLayout(page)[0]?.id ?? null : null,
+  )
   const [addOpen, setAddOpen] = useState(false)
   const [previewWidth, setPreviewWidth] = useState<390 | 856 | 1198>(856)
   const previewDevice = previewWidth === 390 ? 'mobile' : 'desktop'
@@ -176,6 +180,8 @@ export function PageEditor() {
   const undoSession = useEditorSession((state) => state.undo)
   const redoSession = useEditorSession((state) => state.redo)
   const markSaved = useEditorSession((state) => state.markSaved)
+  const resetSession = useEditorSession((state) => state.reset)
+  const discardPageDraft = useClyde((s) => s.discardDraft)
   const past = session?.past ?? []
   const future = session?.future ?? []
   const dirty = session?.dirty ?? false
@@ -239,7 +245,13 @@ export function PageEditor() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const blocks = page?.layout_json ?? []
+  /* Le constructeur travaille sur le BROUILLON quand il en existe un. Les
+     surfaces publiques — vitrine, marketplace, page d'accueil — continuent de
+     lire `layout_json` sans rien savoir du brouillon : c'est ce qui rend
+     structurellement impossible d'exposer un travail non publié. */
+  const blocks = page ? effectiveLayout(page) : []
+  const workingTheme = page ? effectiveTheme(page) : undefined
+  const pendingDraft = page ? hasPendingDraft(page) : false
 
   /* La première mise en page observée devient la référence enregistrée. Le
      store de session survit aux remontages du constructeur ; `ensure` ne
@@ -414,6 +426,18 @@ export function PageEditor() {
   function unpublish() {
     setPublished(business.id, false)
     toast(copy.unpublished)
+  }
+
+  /* Abandonner le brouillon revient à la page en ligne. L'historique est vidé
+     dans le même geste : ses états décrivent le brouillon qu'on vient de jeter,
+     et « Annuler » juste après aurait fait revenir ce que le commerçant venait
+     explicitement d'abandonner. */
+  function discardDraft() {
+    const live = page!.layout_json
+    discardPageDraft(business.id)
+    resetSession(business.id, live)
+    setSelectedId(live[0]?.id ?? null)
+    toast(copy.draftDiscarded)
   }
 
   function duplicateBlock(id: string) {
@@ -658,7 +682,7 @@ export function PageEditor() {
   ) : (
     <div className="flex flex-col gap-6">
       <PageStyleSettings
-        theme={page.theme_json}
+        theme={workingTheme ?? page.theme_json}
         onTheme={(theme, alsoResetBlocks) => {
           updateTheme(business.id, theme)
           if (alsoResetBlocks) commit(resetBlockColors(blocks))
@@ -692,6 +716,8 @@ export function PageEditor() {
               canRedo={future.length > 0}
               undoLabel={copy.undo}
               redoLabel={copy.redo}
+              savingLabel={copy.saving}
+              savedLabel={copy.saved}
               publicPageLabel={copy.publicPage}
               publicPageUrl={`/r/${business.slug}`}
               onUndo={undo}
@@ -712,6 +738,40 @@ export function PageEditor() {
           </div>
         </div>
         <p className="text-sm text-muted-foreground">{copy.description}</p>
+
+        {/* Brouillon en attente. C'est le seul endroit qui porte « Publier les
+            modifications » : le bouton de l'en-tête reste celui de la mise en
+            ligne initiale, et n'apparaît que sur une page hors ligne. Deux
+            boutons pour publier laisseraient le commerçant deviner lequel
+            publie quoi.
+
+            Le bandeau est un `role="status"` en `aria-live="polite"` : sa
+            venue signale un travail non publié, ce qui doit s'entendre sans
+            interrompre la saisie en cours. */}
+        {pendingDraft && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col gap-3 rounded-xl border border-brand/30 bg-brand/5 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="flex min-w-0 items-start gap-2.5">
+              <FileClock className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{copy.draftTitle}</p>
+                <p className="text-sm text-muted-foreground">{copy.draftBody}</p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={discardDraft}>
+                {copy.draftDiscard}
+              </Button>
+              <Button size="sm" onClick={publish}>
+                <Upload data-icon="inline-start" />
+                {copy.draftPublish}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Score de complétion : une jauge et les deux manques les plus
             proches. Complet, le bandeau disparaît — un indicateur toujours
@@ -877,7 +937,7 @@ export function PageEditor() {
                   business={business}
                   products={products}
                   availability={availability}
-                  theme={page.theme_json}
+                  theme={workingTheme ?? page.theme_json}
                   blocks={previewBlocks}
                   device={previewDevice}
                   /* Aperçu « en direct » au sens plein : les boutons, filtres

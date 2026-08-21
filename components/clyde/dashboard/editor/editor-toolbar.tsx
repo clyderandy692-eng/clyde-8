@@ -9,6 +9,8 @@ export function EditorToolbar({
   canRedo,
   undoLabel,
   redoLabel,
+  savingLabel,
+  savedLabel,
   publicPageLabel,
   publicPageUrl,
   onUndo,
@@ -19,6 +21,8 @@ export function EditorToolbar({
   canRedo: boolean
   undoLabel: string
   redoLabel: string
+  savingLabel: string
+  savedLabel: string
   publicPageLabel: string
   publicPageUrl: string
   onUndo: () => void
@@ -28,7 +32,7 @@ export function EditorToolbar({
     <div className="flex shrink-0 items-center gap-2">
       <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex" role="status" aria-live="polite">
         <Circle className={dirty ? 'size-2 fill-brand text-brand' : 'size-2 fill-muted-foreground/50 text-muted-foreground/50'} aria-hidden="true" />
-        {dirty ? 'Modifications en cours…' : 'Enregistré'}
+        {dirty ? savingLabel : savedLabel}
       </span>
       <div className="flex items-center rounded-lg border border-border">
         <button

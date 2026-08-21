@@ -23,6 +23,14 @@ type EditorSessionState = {
   undo: (businessId: string, current: Block[]) => Block[] | null
   redo: (businessId: string, current: Block[]) => Block[] | null
   markSaved: (businessId: string, current: Block[]) => void
+  /**
+   * Repart d'un historique vide sur la mise en page donnée.
+   *
+   * Pour l'abandon d'un brouillon : les états conservés décrivent le brouillon
+   * qu'on vient de jeter, et les rejouer ferait revenir ce que le commerçant
+   * venait explicitement d'abandonner.
+   */
+  reset: (businessId: string, layout: Block[]) => void
 }
 
 const EMPTY: HistoryEntry = {
@@ -101,6 +109,12 @@ export const useEditorSession = create<EditorSessionState>()(
        * pendant la frappe — `savedHash` désigne le dernier état ENREGISTRÉ —
        * et effacerait l'historique au premier caractère tapé.
        */
+      reset: (businessId, layout) => set((state) => ({
+        sessions: {
+          ...state.sessions,
+          [businessId]: { ...EMPTY, savedHash: layoutHash(layout) },
+        },
+      })),
       dropStaleHistory: (businessId, currentLayout) => set((state) => {
         const existing = state.sessions[businessId]
         if (!existing || existing.savedHash === layoutHash(currentLayout)) return state
