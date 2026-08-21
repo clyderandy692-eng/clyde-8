@@ -869,6 +869,12 @@ export const DEMO_PAGES: Page[] = SEEDS.map((s, i) => {
       booking: s.business.module_booking,
       businessName: s.business.name,
     }),
+    /* Aucun brouillon en attente : une page de démonstration livrée avec des
+       modifications non publiées afficherait un avertissement que le
+       commerçant n'a pas provoqué, et l'inviterait à publier un travail qui
+       n'est pas le sien. */
+    draft_layout_json: null,
+    draft_theme_json: null,
     published: true,
   }
 })

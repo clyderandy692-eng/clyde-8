@@ -92,8 +92,20 @@ export interface Business {
 export interface Page {
   id: string
   business_id: string
+  /** Thème EN LIGNE, celui que voit le visiteur. */
   theme_json: PageTheme
+  /** Mise en page EN LIGNE, celle que voit le visiteur. */
   layout_json: Block[]
+  /**
+   * Brouillon en cours, ou `null` quand il n'y en a pas.
+   *
+   * C'est ce que le constructeur modifie. Séparer le brouillon de la page en
+   * ligne est ce qui permet de préparer une refonte sans la montrer ; voir
+   * `lib/clyde/page-draft.ts` pour le raisonnement et les accesseurs.
+   * Aucune surface publique ne doit lire ces deux champs.
+   */
+  draft_layout_json: Block[] | null
+  draft_theme_json: PageTheme | null
   published: boolean
 }
 

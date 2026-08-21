@@ -49,7 +49,7 @@ import { ICONS, LABELS } from './editor/labels'
 import { PageStyleSettings } from './editor/page-style'
 import { BLOCK_LIBRARY, BLOCK_META, createBlock, publicBlocks } from '@/lib/clyde/blocks'
 import { useEditorDock } from '@/lib/clyde/editor-dock'
-import { layoutPersisted, useEditorSession } from '@/lib/clyde/editor-session'
+import { layoutPersisted, useEditorSession, useEditorSessionReady } from '@/lib/clyde/editor-session'
 import {
   duplicateEditorBlock,
   moveEditorBlock,
@@ -169,6 +169,7 @@ export function PageEditor() {
      accordéon SOUS le bloc touché : pas d'aller-retour entre deux tiroirs. */
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [movementAnnouncement, setMovementAnnouncement] = useState('')
+  const historyReady = useEditorSessionReady()
   const session = useEditorSession((state) => business ? state.sessions[business.id] : undefined)
   const ensureSession = useEditorSession((state) => state.ensure)
   const commitSession = useEditorSession((state) => state.commit)
@@ -242,10 +243,28 @@ export function PageEditor() {
 
   /* La première mise en page observée devient la référence enregistrée. Le
      store de session survit aux remontages du constructeur ; `ensure` ne
-     remplace donc jamais une session qui possède déjà son historique. */
+     remplace donc jamais une session qui possède déjà son historique pour
+     cette mise en page.
+
+     L'attente de `historyReady` n'est pas décorative : l'historique est relu
+     depuis le stockage après montage, et un `ensure` lancé avant cette
+     relecture déclarerait une session neuve sur une page qui avait un passé.
+     C'est exactement le défaut qu'on répare ici. */
   useEffect(() => {
-    if (business && page) ensureSession(business.id, page.layout_json)
-  }, [business, ensureSession, page])
+    if (historyReady && business && page) ensureSession(business.id, blocks)
+  }, [historyReady, business, ensureSession, page])
+
+  /* Réconciliation de l'historique relu, une seule fois par page ouverte.
+     L'Effect Event lit la mise en page du moment sans faire de celle-ci une
+     dépendance : relancée à chaque frappe, la comparaison effacerait
+     l'historique au premier caractère tapé. */
+  const reconcileHistory = useEditorSession((state) => state.dropStaleHistory)
+  const reconcileOnce = useEffectEvent(() => {
+    if (business) reconcileHistory(business.id, blocks)
+  })
+  useEffect(() => {
+    if (historyReady && business?.id) reconcileOnce()
+  }, [historyReady, business?.id])
 
   const selected = blocks.find((block) => block.id === selectedId) ?? null
   const modules = useMemo(
@@ -753,7 +772,7 @@ export function PageEditor() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-base">{copy.structure}</CardTitle>
-                <CardDescription>{blocks.length} blocks</CardDescription>
+                <CardDescription>{copy.blockCount(blocks.length)}</CardDescription>
               </div>
               <Button size="icon" variant="outline" aria-label={copy.addBlock} onClick={() => setAddOpen((open) => !open)}>
                 <Plus />

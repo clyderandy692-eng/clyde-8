@@ -185,6 +185,10 @@ export const LABELS = {
     publicPage: 'Ouvrir ma page',
   undo: 'Annuler',
   redo: 'Rétablir',
+  /* Fonction et non chaîne : le pluriel appartient à la langue. Un « 1 blocs »
+     dans le seul endroit du constructeur qui compte quelque chose se remarque
+     autant qu'un mot anglais. */
+  blockCount: (n: number) => `${n} bloc${n > 1 ? 's' : ''}`,
   readiness: 'Votre page est prête à',
   readinessDone: 'Votre page est complète.',
     empty: 'Ajoutez un bloc pour commencer.',
@@ -317,6 +321,7 @@ export const LABELS = {
     publicPage: 'Open my page',
   undo: 'Undo',
   redo: 'Redo',
+  blockCount: (n: number) => `${n} block${n > 1 ? 's' : ''}`,
   readiness: 'Your page is',
   readinessDone: 'Your page is complete.',
     empty: 'Add a block to get started.',
