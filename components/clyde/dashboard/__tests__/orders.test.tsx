@@ -38,7 +38,7 @@ const order = (id: string, status: OrderStatus, name: string): Order => ({
   customer_id: null,
   customer_name: name,
   customer_phone: '+2250700000000',
-  channel: 'whatsapp',
+  channel: 'online',
   location_id: null,
   total_estimate: 12_000,
   status,
