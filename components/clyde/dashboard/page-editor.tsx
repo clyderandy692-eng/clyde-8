@@ -1,6 +1,6 @@
 'use client'
 
-import { useDeferredValue, useEffect, useEffectEvent, useMemo, useState, useTransition } from 'react'
+import { useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import {
   ChevronDown,
@@ -134,6 +134,33 @@ export function PageEditor() {
   const [addOpen, setAddOpen] = useState(false)
   const [previewWidth, setPreviewWidth] = useState<390 | 856 | 1198>(856)
   const previewDevice = previewWidth === 390 ? 'mobile' : 'desktop'
+  /* Mise à l'échelle de l'aperçu. Les boutons 856 et 1198 promettent de juger
+     la page à cette largeur ; le simulateur gardait sa largeur CSS réelle et
+     le panneau défilait latéralement, si bien qu'un aperçu 1198 dans un
+     panneau de 695 px n'en montrait que 58 % à la fois — précisément ce qui
+     empêche de juger une mise en page. On réduit donc l'aperçu pour le faire
+     tenir en entier, comme une maquette que l'on regarde de plus loin.
+
+     Le mode téléphone (390) est exclu : il reste fluide via `maxWidth: 100%`,
+     un comportement vérifié qui n'a pas à changer. */
+  const previewViewportRef = useRef<HTMLDivElement | null>(null)
+  const [previewViewport, setPreviewViewport] = useState(0)
+  useEffect(() => {
+    const node = previewViewportRef.current
+    if (!node) return
+    /* La largeur utile dépend de la fenêtre ET des tiroirs latéraux : un
+       ResizeObserver suit les deux, là où un écouteur `resize` manquerait un
+       changement de mise en page à fenêtre constante. */
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setPreviewViewport(entry.contentRect.width)
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+  const previewScale =
+    previewWidth !== 390 && previewViewport > 0 && previewViewport < previewWidth
+      ? previewViewport / previewWidth
+      : 1
   /* Sur téléphone, structure et réglages vivent dans des tiroirs bas : la
      page ne montre que l'aperçu — trois cartes empilées noyaient l'écran. */
   const [mobilePanel, setMobilePanel] = useState<'structure' | 'settings' | null>(null)
@@ -777,10 +804,40 @@ export function PageEditor() {
               l'aperçu occupe toute la hauteur disponible de la grille (elle-même
               calée sur la hauteur de l'écran) au lieu d'un plafond arbitraire de
               540 px — les réglages de bloc, plus hauts, le dépassaient de loin. */}
-          <CardContent className="flex min-h-0 flex-1 justify-start overflow-auto bg-muted/30 p-1.5 md:p-6">
+          <CardContent
+            ref={previewViewportRef}
+            className="flex min-h-0 flex-1 justify-start overflow-auto bg-muted/30 p-1.5 md:p-6"
+          >
+            {/* Enveloppe de mise à l'échelle. Un élément transformé occupe
+                toujours sa boîte d'origine dans le flux : sans `overflow-hidden`
+                ici, les 1198 px non réduits rouvriraient la glissière
+                horizontale que la réduction vient justement supprimer. */}
+            {/* Sans réduction, l'enveloppe doit rester transparente pour la
+                mise en page : `w-full` pour que le `maxWidth: 100%` de la
+                maquette continue de se mesurer sur le panneau et non sur ses
+                390 px propres. Sinon l'aperçu téléphone cesse d'être fluide et
+                se fait rogner à droite — le défaut que corrigeait déjà
+                `maxWidth`. */}
             <div
-              className={`clyde-mock mx-auto shrink-0 overflow-hidden rounded-xl border shadow-sm transition-[width,opacity] duration-300 ${isPreviewPending ? 'opacity-70' : 'opacity-100'}`}
-              style={{ width: previewWidth, maxWidth: previewWidth === 390 ? '100%' : undefined }}
+              className={`flex shrink-0 overflow-hidden ${previewScale < 1 ? 'mx-auto' : 'w-full justify-center'}`}
+              style={previewScale < 1 ? { width: previewWidth * previewScale } : undefined}
+            >
+            <div
+              className={`clyde-mock ${previewScale < 1 ? '' : 'mx-auto'} shrink-0 overflow-hidden rounded-xl border shadow-sm transition-[width,opacity] duration-300 ${isPreviewPending ? 'opacity-70' : 'opacity-100'}`}
+              style={{
+                width: previewWidth,
+                maxWidth: previewWidth === 390 ? '100%' : undefined,
+                /* `top left` et non `top center` : l'origine doit coïncider
+                   avec le coin que l'enveloppe garde en place, sinon la
+                   maquette réduite sort du cadre par la gauche. */
+                ...(previewScale < 1
+                  ? {
+                      height: `${100 / previewScale}%`,
+                      transform: `scale(${previewScale})`,
+                      transformOrigin: 'top left',
+                    }
+                  : {}),
+              }}
             >
               {/* Téléphone : le simulateur vise le format d'un vrai écran de
                   téléphone (`75dvh`), et non l'espace laissé libre par le
@@ -842,6 +899,7 @@ export function PageEditor() {
                   )}
                 />
               </div>
+            </div>
             </div>
           </CardContent>
         </Card>
