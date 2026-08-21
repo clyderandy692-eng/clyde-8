@@ -68,6 +68,46 @@ function layoutHash(layout: Block[]): string {
 }
 
 /**
+ * Ce qui de l'historique part sur le disque.
+ *
+ * Fonction nommée plutôt que closure passée à `partialize` : c'est une règle
+ * métier — quelle tranche garder, et quoi ne pas faire survivre — et une règle
+ * doit pouvoir être interrogée seule. Le middleware `persist` ne s'installe pas
+ * sans stockage, donc un test qui passerait par `useEditorSession.persist`
+ * n'aurait rien à interroger en environnement `node`.
+ *
+ * On ne persiste que l'historique, écourté, et on remet à zéro ce qui n'a de
+ * sens que dans la session en cours : `lastGroup` et `lastCommitAt` servent à
+ * fondre en un seul pas des gestes rapprochés (un glissement de curseur). Les
+ * faire survivre au rechargement ferait fusionner la première modification
+ * d'une visite avec la dernière de la précédente. Ils sont réécrits
+ * explicitement plutôt qu'omis, pour que chaque entrée relue reste une
+ * `HistoryEntry` complète.
+ */
+export function persistedSessions(
+  state: EditorSessionState,
+): { sessions: Record<string, HistoryEntry> } {
+  return {
+    sessions: Object.fromEntries(
+      Object.entries(state.sessions).map(([id, entry]) => [
+        id,
+        {
+          /* `past` garde sa fin (les pas les plus récents) et `future` son
+             début : dans les deux cas, ce qui est le plus proche du présent est
+             ce qu'on voudra défaire ou refaire en premier. */
+          past: entry.past.slice(-PERSISTED_DEPTH),
+          future: entry.future.slice(0, PERSISTED_DEPTH),
+          dirty: entry.dirty,
+          savedHash: entry.savedHash,
+          lastGroup: null,
+          lastCommitAt: 0,
+        },
+      ]),
+    ),
+  }
+}
+
+/**
  * Historique du constructeur, conservé d'une visite à l'autre.
  *
  * L'historique vivait en mémoire seule : un rechargement laissait « Annuler »
@@ -205,24 +245,7 @@ export const useEditorSession = create<EditorSessionState>()(
          fusionner la première modification d'une visite avec la dernière de la
          précédente. Ils sont donc réécrits explicitement plutôt qu'omis, pour
          que chaque entrée relue reste une `HistoryEntry` complète. */
-      partialize: (state) => ({
-        sessions: Object.fromEntries(
-          Object.entries(state.sessions).map(([id, entry]) => [
-            id,
-            {
-              /* `past` garde sa fin (les pas les plus récents) et `future` son
-                 début : dans les deux cas, ce qui est le plus proche du présent
-                 est ce qu'on voudra défaire ou refaire en premier. */
-              past: entry.past.slice(-PERSISTED_DEPTH),
-              future: entry.future.slice(0, PERSISTED_DEPTH),
-              dirty: entry.dirty,
-              savedHash: entry.savedHash,
-              lastGroup: null,
-              lastCommitAt: 0,
-            },
-          ]),
-        ),
-      }),
+      partialize: persistedSessions,
     },
   ),
 )

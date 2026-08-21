@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useEditorSession } from '../editor-session'
+import { persistedSessions, useEditorSession } from '../editor-session'
 import type { Block } from '../types'
 
 const first = [{ id: 'hero-1', type: 'hero' }] as Block[]
@@ -111,18 +111,13 @@ describe('reset — abandon d’un brouillon', () => {
   })
 })
 
-/* On interroge `partialize` — la règle elle-même — au lieu de relire
+/* On interroge la règle de découpage elle-même au lieu de relire
    `localStorage` : cette suite tourne en environnement `node` (voir
-   `vitest.config.ts`), et un test qui aurait besoin d'un DOM pour vérifier une
-   règle de découpage testerait surtout son propre échafaudage. */
+   `vitest.config.ts`), et sans stockage le middleware `persist` ne s'installe
+   pas — passer par `useEditorSession.persist` n'aurait rien à interroger. */
 describe('tranche d’historique retenue pour le disque', () => {
-  const persistedPast = (businessId: string): Block[][] => {
-    const options = useEditorSession.persist.getOptions()
-    const partial = options.partialize?.(useEditorSession.getState()) as {
-      sessions: Record<string, { past: Block[][] }>
-    }
-    return partial.sessions[businessId].past
-  }
+  const persistedPast = (businessId: string): Block[][] =>
+    persistedSessions(useEditorSession.getState()).sessions[businessId].past
 
   /* Un pas d'historique est une mise en page ENTIÈRE, pas une opération. Ce que
      l'on écrit doit donc rester court : le stockage est partagé avec le
@@ -163,12 +158,9 @@ describe('tranche d’historique retenue pour le disque', () => {
     session.ensure('business-1', first)
     session.commit('business-1', first, second, 'hero-1:title')
 
-    const options = useEditorSession.persist.getOptions()
-    const partial = options.partialize?.(useEditorSession.getState()) as {
-      sessions: Record<string, { lastGroup: string | null; lastCommitAt: number }>
-    }
+    const retenu = persistedSessions(useEditorSession.getState()).sessions['business-1']
 
-    expect(partial.sessions['business-1'].lastGroup).toBeNull()
-    expect(partial.sessions['business-1'].lastCommitAt).toBe(0)
+    expect(retenu.lastGroup).toBeNull()
+    expect(retenu.lastCommitAt).toBe(0)
   })
 })

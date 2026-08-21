@@ -752,12 +752,18 @@ export function PageEditor() {
           <div
             role="status"
             aria-live="polite"
+            /* Nommé par son titre : trois `role="status"` cohabitent sur cet
+               écran (le témoin d'enregistrement, l'annonce des déplacements au
+               lecteur d'écran, et ce bandeau). Sans nom accessible, aucun n'est
+               désignable — ni par un lecteur d'écran qui les énumère, ni par un
+               test. */
+            aria-labelledby="draft-banner-title"
             className="flex flex-col gap-3 rounded-xl border border-brand/30 bg-brand/5 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="flex min-w-0 items-start gap-2.5">
               <FileClock className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden="true" />
               <div className="min-w-0">
-                <p className="text-sm font-medium">{copy.draftTitle}</p>
+                <p id="draft-banner-title" className="text-sm font-medium">{copy.draftTitle}</p>
                 <p className="text-sm text-muted-foreground">{copy.draftBody}</p>
               </div>
             </div>
