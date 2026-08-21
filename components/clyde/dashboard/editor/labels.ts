@@ -189,6 +189,18 @@ export const LABELS = {
      dans le seul endroit du constructeur qui compte quelque chose se remarque
      autant qu'un mot anglais. */
   blockCount: (n: number) => `${n} bloc${n > 1 ? 's' : ''}`,
+  /* Témoin d'enregistrement. Ces deux libellés étaient écrits en dur dans la
+     barre d'outils : un commerçant en anglais lisait « Modifications en
+     cours… ». Le symétrique du « 15 blocks » corrigé juste au-dessus. */
+  saving: 'Modifications en cours…',
+  saved: 'Enregistré',
+  /* Brouillon. « Brouillon » est préféré à « non publié » : le mot dit ce que
+     la chose EST, quand « non publié » ne dit que ce qui lui manque. */
+  draftTitle: 'Brouillon non publié',
+  draftBody: 'Vos visiteurs voient toujours la version en ligne.',
+  draftPublish: 'Publier les modifications',
+  draftDiscard: 'Abandonner le brouillon',
+  draftDiscarded: 'Brouillon abandonné. La page en ligne est inchangée.',
   readiness: 'Votre page est prête à',
   readinessDone: 'Votre page est complète.',
     empty: 'Ajoutez un bloc pour commencer.',
@@ -322,6 +334,13 @@ export const LABELS = {
   undo: 'Undo',
   redo: 'Redo',
   blockCount: (n: number) => `${n} block${n > 1 ? 's' : ''}`,
+  saving: 'Saving…',
+  saved: 'Saved',
+  draftTitle: 'Unpublished draft',
+  draftBody: 'Your visitors still see the live version.',
+  draftPublish: 'Publish changes',
+  draftDiscard: 'Discard draft',
+  draftDiscarded: 'Draft discarded. Your live page is unchanged.',
   readiness: 'Your page is',
   readinessDone: 'Your page is complete.',
     empty: 'Add a block to get started.',

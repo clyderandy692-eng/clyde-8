@@ -2072,7 +2072,18 @@ export const useClyde = create<ClydeState>()(
           businesses: mergeById(saved.businesses, current.businesses),
           products: mergeById(saved.products, current.products),
           locations: mergeById(saved.locations, current.locations),
-          pages: mergeById(saved.pages, current.pages),
+          /* Les pages enregistrées avant l'existence du brouillon n'ont pas ses
+             deux champs. On ne monte pas la version du store pour autant : la
+             migration repart des graines pour les pages, ce qui effacerait le
+             travail réel d'un commerçant pour un simple ajout de champ. On
+             complète donc à la relecture. Les accesseurs de `page-draft`
+             tolèrent l'absence via `??`, mais un type qui annonce `null` doit
+             valoir `null` — sinon l'invariant ne tient que par chance. */
+          pages: mergeById(saved.pages, current.pages).map((p) => ({
+            ...p,
+            draft_layout_json: p.draft_layout_json ?? null,
+            draft_theme_json: p.draft_theme_json ?? null,
+          })),
           orders: mergeById(saved.orders, current.orders),
           orderItems: mergeById(saved.orderItems, current.orderItems),
           availability: mergeById(saved.availability, current.availability),

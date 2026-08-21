@@ -60,7 +60,9 @@ const STATUS_TONE: Record<OrderStatus, string> = {
  * parce que c'est le même geste du commerçant — regarder ce qui attend une
  * réponse — et qu'un onglet de plus coûte moins qu'une page de plus.
  */
-const FILTER_KEYS: Array<OrderStatus | 'all' | 'abandoned'> = [
+/* Exporté pour que les tests désignent un onglet par sa position plutôt que
+   par son libellé, qui appartient au dictionnaire. */
+export const FILTER_KEYS: Array<OrderStatus | 'all' | 'abandoned'> = [
   'pending',
   'whatsapp_opened',
   'confirmed',
