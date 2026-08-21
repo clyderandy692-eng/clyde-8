@@ -68,3 +68,107 @@ describe('editor session history', () => {
     expect(useEditorSession.getState().sessions['business-2'].past).toHaveLength(0)
   })
 })
+
+describe('reset — abandon d’un brouillon', () => {
+  it('repart d’un historique vide sur la mise en page conservée', () => {
+    const session = useEditorSession.getState()
+    session.ensure('business-1', first)
+    session.commit('business-1', first, second)
+    session.reset('business-1', first)
+
+    const entry = useEditorSession.getState().sessions['business-1']
+    expect(entry.past).toHaveLength(0)
+    expect(entry.future).toHaveLength(0)
+    /* La page conservée EST la référence : rien ne reste à enregistrer. */
+    expect(entry.dirty).toBe(false)
+  })
+
+  /* Régression : c'est la raison d'être de `reset`. Les états d'historique
+     décrivent le brouillon qu'on vient de jeter ; si « Annuler » restait
+     praticable, il ferait revenir à l'écran ce que le commerçant venait
+     explicitement d'abandonner — l'inverse exact de ce qu'il a demandé. */
+  it('rend l’annulation impraticable après l’abandon', () => {
+    const session = useEditorSession.getState()
+    session.ensure('business-1', first)
+    session.commit('business-1', first, second)
+    session.reset('business-1', first)
+
+    expect(useEditorSession.getState().undo('business-1', first)).toBeNull()
+    expect(useEditorSession.getState().redo('business-1', first)).toBeNull()
+  })
+
+  /* Régression : l'abandon d'un brouillon ne concerne qu'un commerce. Un
+     `reset` qui remettrait à zéro `sessions` entier ferait perdre son
+     historique au commerce voisin ouvert dans un autre onglet. */
+  it('ne touche pas à l’historique d’un autre commerce', () => {
+    const session = useEditorSession.getState()
+    session.ensure('business-1', first)
+    session.ensure('business-2', first)
+    session.commit('business-2', first, second)
+    session.reset('business-1', first)
+
+    expect(useEditorSession.getState().sessions['business-2'].past).toHaveLength(1)
+  })
+})
+
+/* On interroge `partialize` — la règle elle-même — au lieu de relire
+   `localStorage` : cette suite tourne en environnement `node` (voir
+   `vitest.config.ts`), et un test qui aurait besoin d'un DOM pour vérifier une
+   règle de découpage testerait surtout son propre échafaudage. */
+describe('tranche d’historique retenue pour le disque', () => {
+  const persistedPast = (businessId: string): Block[][] => {
+    const options = useEditorSession.persist.getOptions()
+    const partial = options.partialize?.(useEditorSession.getState()) as {
+      sessions: Record<string, { past: Block[][] }>
+    }
+    return partial.sessions[businessId].past
+  }
+
+  /* Un pas d'historique est une mise en page ENTIÈRE, pas une opération. Ce que
+     l'on écrit doit donc rester court : le stockage est partagé avec le
+     registre `clyde-data`, et si le quota casse, le premier sacrifié serait le
+     travail du commerçant, pas son historique. */
+  it('n’écrit qu’une tranche courte de l’historique', () => {
+    const session = useEditorSession.getState()
+    session.ensure('business-1', first)
+    for (let i = 0; i < 30; i += 1) {
+      session.commit('business-1', first, second)
+    }
+
+    expect(useEditorSession.getState().sessions['business-1'].past.length)
+      .toBeGreaterThan(12)
+    expect(persistedPast('business-1').length).toBeLessThanOrEqual(12)
+  })
+
+  /* Régression : ce qui est le plus proche du présent est ce qu'on voudra
+     défaire en premier. Retenir le DÉBUT de `past` garderait les pas les plus
+     anciens et jetterait le geste que le commerçant vient de faire. */
+  it('conserve les pas les plus récents, pas les plus anciens', () => {
+    const session = useEditorSession.getState()
+    const etat = (n: number) =>
+      [{ id: 'hero-1', type: 'hero', title: `titre ${n}` }] as Block[]
+    session.ensure('business-1', etat(0))
+    for (let i = 0; i < 20; i += 1) {
+      session.commit('business-1', etat(i), etat(i + 1))
+    }
+
+    expect(persistedPast('business-1').at(-1)).toEqual(etat(19))
+  })
+
+  /* Régression : `lastGroup` et `lastCommitAt` fondent en un seul pas des
+     gestes rapprochés. Les laisser survivre au rechargement ferait fusionner la
+     première modification d'une visite avec la dernière de la précédente. */
+  it('ne fait pas survivre le regroupement de saisie', () => {
+    const session = useEditorSession.getState()
+    session.ensure('business-1', first)
+    session.commit('business-1', first, second, 'hero-1:title')
+
+    const options = useEditorSession.persist.getOptions()
+    const partial = options.partialize?.(useEditorSession.getState()) as {
+      sessions: Record<string, { lastGroup: string | null; lastCommitAt: number }>
+    }
+
+    expect(partial.sessions['business-1'].lastGroup).toBeNull()
+    expect(partial.sessions['business-1'].lastCommitAt).toBe(0)
+  })
+})

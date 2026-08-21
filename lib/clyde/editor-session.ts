@@ -94,6 +94,12 @@ export const useEditorSession = create<EditorSessionState>()(
               [businessId]: { ...EMPTY, savedHash: layoutHash(initial) },
             },
           }),
+      reset: (businessId, layout) => set((state) => ({
+        sessions: {
+          ...state.sessions,
+          [businessId]: { ...EMPTY, savedHash: layoutHash(layout) },
+        },
+      })),
       /**
        * Écarte un historique relu qui ne raconte plus la page affichée.
        *
@@ -109,12 +115,6 @@ export const useEditorSession = create<EditorSessionState>()(
        * pendant la frappe — `savedHash` désigne le dernier état ENREGISTRÉ —
        * et effacerait l'historique au premier caractère tapé.
        */
-      reset: (businessId, layout) => set((state) => ({
-        sessions: {
-          ...state.sessions,
-          [businessId]: { ...EMPTY, savedHash: layoutHash(layout) },
-        },
-      })),
       dropStaleHistory: (businessId, currentLayout) => set((state) => {
         const existing = state.sessions[businessId]
         if (!existing || existing.savedHash === layoutHash(currentLayout)) return state

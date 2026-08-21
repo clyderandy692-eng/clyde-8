@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createBlock } from '../blocks'
 import {
   discardDraft,
   effectiveLayout,
@@ -8,10 +9,22 @@ import {
 } from '../page-draft'
 import type { Block, Page, PageTheme } from '../types'
 
-const theme = (radius: number): PageTheme =>
-  ({ radius } as unknown as PageTheme)
+/* `brand` plutôt qu'un champ inventé : un test qui fabrique une forme fictive
+   du thème cesse de dire la vérité dès que le vrai type change — sans échouer
+   pour autant, puisque le cast masque l'écart. */
+const theme = (brand: string): PageTheme => ({
+  brand,
+  background: '#ffffff',
+  ink: '#111111',
+  font: 'inter',
+  buttonStyle: 'rounded',
+  density: 'normal',
+})
 
-const block = (id: string): Block => ({ id, type: 'contact' } as unknown as Block)
+/* La vraie fabrique du projet plutôt qu'un objet à deux champs : si un bloc
+   gagne un champ obligatoire, le test continue de manipuler des blocs valides
+   au lieu de figer une forme qui n'existe plus. */
+const block = (id: string): Block => ({ ...createBlock('contact'), id })
 
 /** Page en ligne sans brouillon : l'état d'un commerçant qui vient de publier. */
 function livePage(): Page {
@@ -20,10 +33,10 @@ function livePage(): Page {
     business_id: 'b1',
     published: true,
     layout_json: [block('a'), block('b')],
-    theme_json: theme(8),
+    theme_json: theme('#0a7'),
     draft_layout_json: null,
     draft_theme_json: null,
-  } as unknown as Page
+  }
 }
 
 describe('effectiveLayout / effectiveTheme', () => {
@@ -35,9 +48,9 @@ describe('effectiveLayout / effectiveTheme', () => {
 
   it('renvoie le brouillon dès qu’il existe', () => {
     const draft = [block('b'), block('a')]
-    const page = { ...livePage(), draft_layout_json: draft, draft_theme_json: theme(24) }
+    const page = { ...livePage(), draft_layout_json: draft, draft_theme_json: theme('#c33') }
     expect(effectiveLayout(page)).toBe(draft)
-    expect(effectiveTheme(page).radius).toBe(24)
+    expect(effectiveTheme(page).brand).toBe('#c33')
   })
 
   /* Régression : un brouillon de mise en page seul ne doit pas entraîner le
@@ -69,7 +82,7 @@ describe('hasPendingDraft', () => {
   })
 
   it('est vrai quand seul le thème diffère', () => {
-    const page = { ...livePage(), draft_theme_json: theme(24) }
+    const page = { ...livePage(), draft_theme_json: theme('#c33') }
     expect(hasPendingDraft(page)).toBe(true)
   })
 
@@ -93,12 +106,12 @@ describe('publishDraft', () => {
     const page = {
       ...livePage(),
       draft_layout_json: [block('b')],
-      draft_theme_json: theme(24),
+      draft_theme_json: theme('#c33'),
     }
     const published = publishDraft(page)
 
     expect(published.layout_json).toHaveLength(1)
-    expect(published.theme_json.radius).toBe(24)
+    expect(published.theme_json.brand).toBe('#c33')
     expect(published.draft_layout_json).toBeNull()
     expect(published.draft_theme_json).toBeNull()
     expect(published.published).toBe(true)
@@ -129,7 +142,7 @@ describe('discardDraft', () => {
     const page = {
       ...livePage(),
       draft_layout_json: [block('b')],
-      draft_theme_json: theme(24),
+      draft_theme_json: theme('#c33'),
     }
     const back = discardDraft(page)
 
